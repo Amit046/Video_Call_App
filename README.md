@@ -92,37 +92,5 @@ Email: amityt500678@gmail.com
 
 ---
 
-## 🪪 License
 
-MIT License
-
----
-
-## 📌 Summary of How to Run the Project
-
-1. **Clone the Repository:**
-    ```bash
-    git clone https://github.com/Amit046/Video_Call_App.git
-    cd Video_Call_App
-    ```
-
-2. **Install and Run Backend:**
-    ```bash
-    cd backend
-    npm install
-    node src/app.js
-    ```
-
-3. **Install and Run Frontend (in a new terminal):**
-    ```bash
-    cd frontend
-    npm install
-    npm start
-    ```
-
-4. **Open in Browser:**
-    - Frontend: http://localhost:3000
-    - Backend API: http://localhost:5000 (or your configured port)
-
----
 
