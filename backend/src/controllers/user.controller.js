@@ -1,6 +1,6 @@
 import httpStatus from "http-status";
 import { User } from "../models/user.model.js";
-import bcrypt, { hash } from "bcrypt"
+import bcrypt, { hash } from "bcrypt"      // Import bcrypt for hashing passwords 
 
 import crypto from "crypto"
 import { Meeting } from "../models/meeting.model.js";
@@ -32,20 +32,20 @@ const login = async (req, res) => {
         }
 
     } catch (e) {
-        return res.status(500).json({ message: Something went wrong ${e} })
+        return res.status(500).json({ message: `Something went wrong ${e}` })
     }
 }
 
 
-const register = async (req, res) => {
-    const { name, username, password } = req.body;
+const register = async (req, res) => {          // Register a new user 
+    const { name, username, password } = req.body;     // Destructure the request body to get name, username, and password
 
 
     try {
         const existingUser = await User.findOne({ username });
         if (existingUser) {
-            return res.status(httpStatus.FOUND).json({ message: "User already exists" });
-        }
+            return res.status(httpStatus.FOUND).json({ message: "User already exists" });    // Check if the user already exists  
+        } // If the user does not exist, proceed to create a new user
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -57,10 +57,10 @@ const register = async (req, res) => {
 
         await newUser.save();
 
-        res.status(httpStatus.CREATED).json({ message: "User Registered" })
+        res.status(httpStatus.CREATED).json({ message: "User Registered" })    // Save the new user to the database and respond with a success message
 
     } catch (e) {
-        res.json({ message: Something went wrong ${e} })
+        res.json({ message: `Something went wrong ${e}` })
     }
 
 }
@@ -74,7 +74,7 @@ const getUserHistory = async (req, res) => {
         const meetings = await Meeting.find({ user_id: user.username })
         res.json(meetings)
     } catch (e) {
-        res.json({ message: Something went wrong ${e} })
+        res.json({ message: `Something went wrong ${e}` })
     }
 }
 
@@ -93,7 +93,7 @@ const addToHistory = async (req, res) => {
 
         res.status(httpStatus.CREATED).json({ message: "Added code to history" })
     } catch (e) {
-        res.json({ message: Something went wrong ${e} })
+        res.json({ message: `Something went wrong ${e}` })
     }
 }
 
