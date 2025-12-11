@@ -1,0 +1,151 @@
+[33mcommit 9031293d6f62118d692df4befeb200313e205a2b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Amit <amityt500678@gmail.com>
+Date:   Wed Dec 10 15:19:39 2025 +0530
+
+    Fixed peer connection bugs, improved cleanup and UI chat handling
+
+[33mcommit 183823969e74ef3ee5a3c2d6c06fa4995f848a9c[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Mon Dec 8 21:53:32 2025 +0530
+
+    Add live link to Video Call App README
+    
+    Added live link to the README for easy access.
+
+[33mcommit d09eec687ba29488d630685defed82641a9993df[m
+Author: Amit <amityt500678@gmail.com>
+Date:   Mon Dec 8 21:49:18 2025 +0530
+
+    Fix authentication and server issues
+
+[33mcommit a41e41410f46a016f433df8d71ebaf5390e63ef1[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Mon Jul 21 22:22:12 2025 +0530
+
+    Update RESPONSIVE App.css
+
+[33mcommit b3bdf4009fbb7621159dda21f77dfda5cc3d3506[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Mon Jul 21 22:21:16 2025 +0530
+
+    Update videoComponent.module.css
+
+[33mcommit a5bbbb22f97101731eb73b856a1ec0e2b3582c39[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Sat Jul 19 14:31:57 2025 +0530
+
+    Update landing.jsx
+
+[33mcommit 26192e0e22b28466d6e1399b5f12d3d6893ccb5c[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Sat Jul 19 14:31:11 2025 +0530
+
+    Update user.controller.js
+
+[33mcommit daa86c1ca60f2ef1c9684e327fdef11e85a4ea64[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Sat Jul 19 14:29:30 2025 +0530
+
+    Update videoComponent.module.css
+
+[33mcommit 4f5425eb6838f97008542181d6ab5ecfffecf60d[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Thu Jul 17 19:44:04 2025 +0530
+
+    App.test.js
+
+[33mcommit fe6a6e7d39150164e4c8e8b8ca408129c635916b[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:43:11 2025 +0530
+
+    Update App.test.js
+
+[33mcommit 326fd317c9aa4468e5c7210799f1bf1b7a4cbba6[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:40:06 2025 +0530
+
+    Update landing.jsx
+
+[33mcommit 4f423f0a5ce6227c0b41b9bd4ef117f211a20824[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:39:14 2025 +0530
+
+    Update landing.jsx
+
+[33mcommit b6b8db4b7949d91bb8861b30e69e6eb3e049cee9[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:31:41 2025 +0530
+
+    Update VideoMeet.jsx
+
+[33mcommit f6a382db163687a3b5532f40e3e5a52f1dafc023[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:30:34 2025 +0530
+
+    Update VideoMeet.jsx
+
+[33mcommit 0e27c6a4383dc731be90f871a81a1815f352321e[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:26:49 2025 +0530
+
+    Update user.controller.js
+
+[33mcommit f31f693fd375d40db22a88b47a1ed1fefa7ec357[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:25:32 2025 +0530
+
+    Update user.controller.js
+
+[33mcommit ed3c8bd97ba061ed828ca442aa5544909b700668[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:22:10 2025 +0530
+
+    Update user.model.js
+
+[33mcommit 913a85463dd07739c5aea981f3f638aaddd23985[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Thu Jul 17 19:18:31 2025 +0530
+
+    Update user.model.js
+
+[33mcommit 306246f3747ef4960cac773dddbef9048baf8a4f[m
+Author: Ashish kumar jha <157979555+ashishkumarjha94@users.noreply.github.com>
+Date:   Tue Jul 15 21:52:09 2025 +0530
+
+    Update videoComponent.module.css
+
+[33mcommit 85a93a73be71e49c6f3e11dd6e28a4a2697a3d8a[m
+Author: SohamB1810 <152911482+SohamB1810@users.noreply.github.com>
+Date:   Tue Jul 15 21:30:44 2025 +0530
+
+    Update landing.jsx
+
+[33mcommit d350f3e96707fbe7037fd34eaf52095f281a0694[m
+Author: SohamB1810 <152911482+SohamB1810@users.noreply.github.com>
+Date:   Tue Jul 15 21:28:57 2025 +0530
+
+    Update landing.jsx
+
+[33mcommit 48d1a220be20dde542ff24b902dedc8af5b37c1c[m
+Author: SohamB1810 <152911482+SohamB1810@users.noreply.github.com>
+Date:   Tue Jul 15 21:24:44 2025 +0530
+
+    Update user.controller.js
+
+[33mcommit 44ac6341dcbf2395211cf4abbfe856e9585e59c1[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Tue Jul 15 20:06:28 2025 +0530
+
+    README.md
+
+[33mcommit 3e5d0db76e175e0519c2df53b97752a1a7d1c48d[m
+Author: Amit <152797261+Amit046@users.noreply.github.com>
+Date:   Tue Jul 15 20:05:39 2025 +0530
+
+    README.md
+
+[33mcommit 189728c547c513947c25e57faa2fe00b28c29190[m
+Author: Amit <amityt500678@gmail.com>
+Date:   Tue Jul 15 20:00:58 2025 +0530
+
+    Initial commit
