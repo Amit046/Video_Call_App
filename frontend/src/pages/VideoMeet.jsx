@@ -30,11 +30,27 @@ import { useLocation, useParams } from "react-router-dom";
 const server_url = server;
 const connections = {};
 
+// ✅ FIX 1: HD VIDEO CONSTRAINTS
+const HD_VIDEO_CONSTRAINTS = {
+  width: { ideal: 1280, max: 1920 },
+  height: { ideal: 720, max: 1080 },
+  frameRate: { ideal: 30, max: 60 },
+};
+
+const HD_AUDIO_CONSTRAINTS = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  sampleRate: 48000,
+};
+
 const peerConfigConnections = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
   ],
 };
 
@@ -70,17 +86,19 @@ export default function VideoMeetComponent() {
   });
   const [anchorEl, setAnchorEl] = useState(null);
 
+  console.log("🎬 Component Render - Room:", url, "Username:", username);
+
   useEffect(() => {
     console.log("🚀 Component mounted");
     getPermissions();
-    
+
     return () => {
       console.log("🧹 Cleanup");
-      Object.values(connections).forEach(conn => {
+      Object.values(connections).forEach((conn) => {
         if (conn) conn.close();
       });
       if (window.localStream) {
-        window.localStream.getTracks().forEach(track => track.stop());
+        window.localStream.getTracks().forEach((track) => track.stop());
       }
       if (socketRef.current) {
         socketRef.current.off("chat-message");
@@ -104,13 +122,17 @@ export default function VideoMeetComponent() {
   const getPermissions = async () => {
     try {
       console.log("📷 Requesting media permissions...");
-      
+
+      // ✅ FIX 1: Request HD video quality
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+        video: HD_VIDEO_CONSTRAINTS,
+        audio: HD_AUDIO_CONSTRAINTS,
       });
 
       console.log("✅ Media permissions granted");
+      console.log("   Video tracks:", stream.getVideoTracks().length);
+      console.log("   Audio tracks:", stream.getAudioTracks().length);
+
       setVideoAvailable(true);
       setAudioAvailable(true);
 
@@ -127,7 +149,7 @@ export default function VideoMeetComponent() {
     } catch (error) {
       console.error("❌ Error getting media permissions:", error);
       showNotification("Please allow camera and microphone access", "error");
-      
+
       let blackSilence = (...args) =>
         new MediaStream([black(...args), silence()]);
       window.localStream = blackSilence();
@@ -140,8 +162,14 @@ export default function VideoMeetComponent() {
 
   const getUserMedia = () => {
     if ((video && videoAvailable) || (audio && audioAvailable)) {
+      console.log("🎥 Getting user media - Video:", video, "Audio:", audio);
+
+      // ✅ FIX 1: Use HD constraints
       navigator.mediaDevices
-        .getUserMedia({ video: video, audio: audio })
+        .getUserMedia({
+          video: video ? HD_VIDEO_CONSTRAINTS : false,
+          audio: audio ? HD_AUDIO_CONSTRAINTS : false,
+        })
         .then(getUserMediaSuccess)
         .catch((e) => {
           console.error("getUserMedia error:", e);
@@ -156,6 +184,8 @@ export default function VideoMeetComponent() {
   };
 
   const getUserMediaSuccess = (stream) => {
+    console.log("✅ getUserMedia success");
+
     try {
       if (window.localStream) {
         window.localStream.getTracks().forEach((track) => track.stop());
@@ -165,20 +195,40 @@ export default function VideoMeetComponent() {
     window.localStream = stream;
     localVideoref.current.srcObject = stream;
 
+    console.log("🔄 Updating peer connections with new stream");
+
+    // ✅ FIX 2: Proper track replacement to avoid freeze
     Object.keys(connections).forEach((id) => {
       if (id === socketIdRef.current) return;
 
       const pc = connections[id];
+      console.log(`   Updating connection: ${id}`);
+
       const senders = pc.getSenders();
-      senders.forEach(sender => pc.removeTrack(sender));
 
       stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
+        const sender = senders.find((s) => s.track?.kind === track.kind);
+        if (sender) {
+          // Replace existing track instead of removing
+          console.log(`      🔄 Replacing ${track.kind} track`);
+          sender.replaceTrack(track).catch((e) => {
+            console.error("      ❌ Replace track error:", e);
+          });
+        } else {
+          // Add new track if sender doesn't exist
+          console.log(`      ➕ Adding ${track.kind} track`);
+          pc.addTrack(track, stream);
+        }
       });
 
-      pc.createOffer()
+      // Create new offer after track replacement
+      pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true,
+      })
         .then((description) => pc.setLocalDescription(description))
         .then(() => {
+          console.log(`      📤 Sending offer to ${id}`);
           socketRef.current.emit(
             "signal",
             id,
@@ -193,7 +243,14 @@ export default function VideoMeetComponent() {
     if (screen) {
       if (navigator.mediaDevices.getDisplayMedia) {
         navigator.mediaDevices
-          .getDisplayMedia({ video: true, audio: true })
+          .getDisplayMedia({
+            video: {
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              frameRate: { ideal: 30 },
+            },
+            audio: true,
+          })
           .then(getDisplayMediaSuccess)
           .catch((e) => {
             console.error(e);
@@ -205,6 +262,8 @@ export default function VideoMeetComponent() {
   };
 
   const getDisplayMediaSuccess = (stream) => {
+    console.log("🖥️ Screen share started");
+
     try {
       if (window.localStream) {
         window.localStream.getTracks().forEach((track) => track.stop());
@@ -214,18 +273,28 @@ export default function VideoMeetComponent() {
     window.localStream = stream;
     localVideoref.current.srcObject = stream;
 
+    // ✅ FIX 2: Proper track replacement for screen share
     Object.keys(connections).forEach((id) => {
       if (id === socketIdRef.current) return;
 
       const pc = connections[id];
       const senders = pc.getSenders();
-      senders.forEach(sender => pc.removeTrack(sender));
 
       stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
+        const sender = senders.find((s) => s.track?.kind === track.kind);
+        if (sender) {
+          sender.replaceTrack(track).catch((e) => {
+            console.error("Replace track error:", e);
+          });
+        } else {
+          pc.addTrack(track, stream);
+        }
       });
 
-      pc.createOffer()
+      pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true,
+      })
         .then((description) => pc.setLocalDescription(description))
         .then(() => {
           socketRef.current.emit(
@@ -247,28 +316,34 @@ export default function VideoMeetComponent() {
 
   const gotMessageFromServer = (fromId, message) => {
     console.log("📨 Signal from:", fromId);
-    
+
     try {
       const signal = JSON.parse(message);
 
-      if (fromId === socketIdRef.current) return;
+      if (fromId === socketIdRef.current) {
+        console.log("   ⏭️ Ignoring signal from self");
+        return;
+      }
 
       if (!connections[fromId]) {
-        console.log("⚠️ No connection exists for:", fromId);
+        console.log("   ⚠️ No connection exists for:", fromId);
         return;
       }
 
       const pc = connections[fromId];
 
       if (signal.sdp) {
-        console.log("📡 Received SDP:", signal.sdp.type, "from:", fromId);
-        
+        console.log("   📡 Received SDP:", signal.sdp.type, "from:", fromId);
+
         pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
           .then(() => {
-            console.log("✅ Remote description set for:", fromId);
+            console.log("   ✅ Remote description set for:", fromId);
             if (signal.sdp.type === "offer") {
-              console.log("📤 Creating answer for:", fromId);
-              return pc.createAnswer();
+              console.log("   📤 Creating answer for:", fromId);
+              return pc.createAnswer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true,
+              });
             }
           })
           .then((description) => {
@@ -278,7 +353,7 @@ export default function VideoMeetComponent() {
           })
           .then(() => {
             if (signal.sdp.type === "offer") {
-              console.log("📤 Sending answer to:", fromId);
+              console.log("   📤 Sending answer to:", fromId);
               socketRef.current.emit(
                 "signal",
                 fromId,
@@ -286,13 +361,14 @@ export default function VideoMeetComponent() {
               );
             }
           })
-          .catch((e) => console.error("❌ SDP error:", e));
+          .catch((e) => console.error("   ❌ SDP error:", e));
       }
 
       if (signal.ice) {
-        console.log("🧊 ICE candidate from:", fromId);
-        pc.addIceCandidate(new RTCIceCandidate(signal.ice))
-          .catch((e) => console.error("❌ ICE error:", e));
+        console.log("   🧊 ICE candidate from:", fromId);
+        pc.addIceCandidate(new RTCIceCandidate(signal.ice)).catch((e) =>
+          console.error("   ❌ ICE error:", e)
+        );
       }
     } catch (error) {
       console.error("❌ Signal processing error:", error);
@@ -301,13 +377,13 @@ export default function VideoMeetComponent() {
 
   const createPeerConnection = (socketId, username = "User") => {
     console.log("🔗 Creating peer connection for:", socketId, username);
-    
+
     const pc = new RTCPeerConnection(peerConfigConnections);
     connections[socketId] = pc;
 
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log("🧊 Sending ICE to:", socketId);
+        console.log("   🧊 Sending ICE to:", socketId);
         socketRef.current.emit(
           "signal",
           socketId,
@@ -317,19 +393,22 @@ export default function VideoMeetComponent() {
     };
 
     pc.ontrack = (event) => {
-      console.log("🎥 Received track from:", socketId);
-      console.log("Stream:", event.streams[0]);
-      
+      console.log("   🎥 Received track from:", socketId);
+      console.log("   Track kind:", event.track.kind);
+      console.log("   Stream:", event.streams[0].id);
+
       setVideos((prevVideos) => {
-        const existingIndex = prevVideos.findIndex(v => v.socketId === socketId);
-        
+        const existingIndex = prevVideos.findIndex(
+          (v) => v.socketId === socketId
+        );
+
         if (existingIndex !== -1) {
           const updated = [...prevVideos];
           updated[existingIndex] = {
             ...updated[existingIndex],
             stream: event.streams[0],
           };
-          console.log("♻️ Updated video for:", socketId);
+          console.log("   ♻️ Updated video for:", socketId);
           return updated;
         } else {
           const newVideo = {
@@ -337,32 +416,37 @@ export default function VideoMeetComponent() {
             stream: event.streams[0],
             username: username || "User",
           };
-          console.log("➕ Added new video for:", socketId);
+          console.log("   ➕ Added new video for:", socketId);
           return [...prevVideos, newVideo];
         }
       });
     };
 
     pc.oniceconnectionstatechange = () => {
-      console.log(`🔌 ICE state for ${socketId}:`, pc.iceConnectionState);
-      
+      console.log(`   🔌 ICE state [${socketId}]: ${pc.iceConnectionState}`);
+
       if (pc.iceConnectionState === "connected") {
-        console.log("✅ Connected to:", socketId);
-      } else if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-        console.log("❌ Connection failed for:", socketId);
+        console.log("   ✅ Connected to:", socketId);
+      } else if (
+        pc.iceConnectionState === "disconnected" ||
+        pc.iceConnectionState === "failed"
+      ) {
+        console.log("   ❌ Connection issue for:", socketId);
       }
     };
 
     pc.onconnectionstatechange = () => {
-      console.log(`🔗 Connection state for ${socketId}:`, pc.connectionState);
+      console.log(
+        `   🔗 Connection state [${socketId}]: ${pc.connectionState}`
+      );
     };
 
     // Add local stream tracks
     if (window.localStream) {
-      console.log("➕ Adding local tracks to peer:", socketId);
+      console.log("   ➕ Adding local tracks to peer:", socketId);
       window.localStream.getTracks().forEach((track) => {
         pc.addTrack(track, window.localStream);
-        console.log("✅ Added track:", track.kind);
+        console.log("      ✅ Added track:", track.kind);
       });
     }
 
@@ -381,18 +465,25 @@ export default function VideoMeetComponent() {
   }, []);
 
   const connectToSocketServer = () => {
-    console.log("🌐 Connecting to server:", server_url);
-    socketRef.current = io.connect(server_url, { secure: false });
+    console.log("\n🌐 Connecting to socket server:", server_url);
+
+    socketRef.current = io.connect(server_url, {
+      secure: false,
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 10,
+    });
 
     socketRef.current.on("signal", gotMessageFromServer);
 
     socketRef.current.on("connect", () => {
-      console.log("✅ Connected to server");
+      console.log("\n✅ Connected to server");
       socketIdRef.current = socketRef.current.id;
       console.log("🆔 My socket ID:", socketIdRef.current);
-      
+
+      console.log("📞 Joining room:", url, "as", username);
       socketRef.current.emit("join-call", url, username);
-      console.log("🚪 Joined room:", url, "as", username);
 
       // Attach message listener only once
       if (!messageListenerAttached.current) {
@@ -402,110 +493,124 @@ export default function VideoMeetComponent() {
       }
 
       socketRef.current.on("user-left", (id) => {
-        console.log("👋 User left:", id);
+        console.log("\n👋 User left:", id);
+
         setVideos((videos) => videos.filter((video) => video.socketId !== id));
-        
+
         if (connections[id]) {
+          console.log("   Closing connection:", id);
           connections[id].close();
           delete connections[id];
         }
-        
+
         showNotification("A user left the call", "info");
       });
 
+      // ✅ FIX 4: MULTI-DEVICE CONNECTION FIX
       socketRef.current.on("user-joined", (...args) => {
-        console.log("👤 User joined event - Raw args:", args);
-        
-        // Handle different argument patterns
+        console.log("\n👤 USER-JOINED EVENT - RAW ARGS:", args);
+
+        // Parse arguments based on what server actually sends
         let id, joinerUsername, clients;
-        
-        // Pattern 1: (id, username, clients) - Correct
-        if (args.length === 3 && typeof args[1] === 'string' && Array.isArray(args[2])) {
-          [id, joinerUsername, clients] = args;
-        }
-        // Pattern 2: (id, clients) - Missing username
-        else if (args.length === 2 && Array.isArray(args[1])) {
-          [id, clients] = args;
-          joinerUsername = "User";
-        }
-        // Pattern 3: (id, username-as-array, undefined) - Server bug
-        else if (args.length === 3 && Array.isArray(args[1])) {
+
+        if (args.length === 3) {
+          // Expected: (id, username, clients)
+          id = args[0];
+          joinerUsername = args[1];
+          clients = args[2];
+
+          // Sometimes username comes as array, clients is undefined
+          if (Array.isArray(joinerUsername) && !clients) {
+            clients = joinerUsername;
+            joinerUsername = "User";
+          }
+        } else if (args.length === 2) {
+          // Fallback: (id, clients)
           id = args[0];
           clients = args[1];
           joinerUsername = "User";
-        }
-        // Fallback
-        else {
-          console.error("❌ Unknown user-joined format:", args);
+        } else {
+          console.error("   ❌ Unknown argument format!");
           return;
         }
-        
-        console.log("📋 Parsed data:");
-        console.log("   - ID:", id);
-        console.log("   - Username:", joinerUsername);
-        console.log("   - Clients:", clients);
+
+        console.log("   ✅ PARSED:");
+        console.log("      Joiner ID:", id);
+        console.log("      Username:", joinerUsername);
+        console.log("      Clients:", clients);
+        console.log("      My ID:", socketIdRef.current);
 
         if (!Array.isArray(clients)) {
-          console.error("❌ Clients is not an array");
+          console.error("   ❌ Clients is not an array:", typeof clients);
           return;
         }
 
-        // Create connections for all clients EXCEPT the new joiner
-        clients.forEach((socketListId) => {
-          if (socketListId === socketIdRef.current || socketListId === id) {
-            console.log("⏭️ Skipping self or new joiner");
-            return;
-          }
-
-          if (!connections[socketListId]) {
-            console.log("🔗 Creating connection for existing peer:", socketListId);
-            createPeerConnection(socketListId, "User");
-          }
-        });
-
-        // If I just joined, create offers to existing peers
+        // If I just joined the room
         if (id === socketIdRef.current) {
-          console.log("🎉 I joined! Creating offers...");
-          
+          console.log(
+            "   🎉 I JOINED! Setting up connections to existing peers..."
+          );
+
+          // Create connections to ALL other peers in the room
+          clients.forEach((socketListId) => {
+            if (socketListId === socketIdRef.current) {
+              console.log("      ⏭️ Skipping self");
+              return;
+            }
+
+            if (!connections[socketListId]) {
+              console.log(
+                "      🔗 Creating connection to existing peer:",
+                socketListId
+              );
+              createPeerConnection(socketListId, "User");
+            } else {
+              console.log("      ✅ Connection already exists:", socketListId);
+            }
+          });
+
+          // After creating all connections, create offers
           setTimeout(() => {
             const peerIds = Object.keys(connections);
-            console.log("📋 Peers to connect:", peerIds);
-            
+            console.log("   📤 Creating offers to", peerIds.length, "peers");
+
             peerIds.forEach((peerId) => {
               if (peerId === socketIdRef.current) return;
 
               const pc = connections[peerId];
-              console.log("📤 Creating offer to:", peerId);
-              
+              console.log("      Creating offer to:", peerId);
+
               pc.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: true,
               })
                 .then((description) => {
-                  console.log("✅ Offer created for:", peerId);
+                  console.log("         ✅ Offer created");
                   return pc.setLocalDescription(description);
                 })
                 .then(() => {
-                  console.log("📤 Sending offer to:", peerId);
+                  console.log("         📤 Sending offer");
                   socketRef.current.emit(
                     "signal",
                     peerId,
                     JSON.stringify({ sdp: pc.localDescription })
                   );
                 })
-                .catch((e) => console.error("❌ Offer error:", e));
+                .catch((e) => console.error("         ❌ Offer error:", e));
             });
           }, 1000);
         } else {
-          // Someone else joined
-          console.log("👋 New user joined:", joinerUsername);
-          
-          // Only create connection if we don't have one already
+          // Someone else joined the room
+          console.log("   👋 Another user joined:", joinerUsername);
+
+          // Create connection if we don't have one
           if (!connections[id]) {
-            console.log("🔗 Creating connection for new joiner:", id);
+            console.log("      🔗 Creating connection to new joiner:", id);
             createPeerConnection(id, joinerUsername);
+          } else {
+            console.log("      ✅ Connection already exists to:", id);
           }
-          
+
           showNotification(`${joinerUsername} joined`, "success");
         }
       });
@@ -514,6 +619,10 @@ export default function VideoMeetComponent() {
     socketRef.current.on("disconnect", () => {
       console.log("❌ Disconnected from server");
       showNotification("Disconnected from server", "error");
+    });
+
+    socketRef.current.on("connect_error", (error) => {
+      console.error("❌ Connection error:", error);
     });
   };
 
@@ -536,20 +645,34 @@ export default function VideoMeetComponent() {
     return Object.assign(stream.getVideoTracks()[0], { enabled: false });
   };
 
-  const handleVideo = () => setVideo(!video);
-  const handleAudio = () => setAudio(!audio);
-  const handleScreen = () => setScreen(!screen);
+  const handleVideo = () => {
+    console.log("🎥 Toggle video:", !video);
+    setVideo(!video);
+  };
+
+  const handleAudio = () => {
+    console.log("🎤 Toggle audio:", !audio);
+    setAudio(!audio);
+  };
+
+  const handleScreen = () => {
+    console.log("🖥️ Toggle screen:", !screen);
+    setScreen(!screen);
+  };
 
   const handleEndCall = () => {
+    console.log("📞 Ending call");
     try {
       if (localVideoref.current && localVideoref.current.srcObject) {
-        localVideoref.current.srcObject.getTracks().forEach((track) => track.stop());
+        localVideoref.current.srcObject
+          .getTracks()
+          .forEach((track) => track.stop());
       }
-      
-      Object.values(connections).forEach(conn => {
+
+      Object.values(connections).forEach((conn) => {
         if (conn) conn.close();
       });
-      
+
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
@@ -562,6 +685,19 @@ export default function VideoMeetComponent() {
   const closeChat = () => {
     setModal(false);
     setNewMessages(0);
+  };
+
+  // ✅ FIX 3: Separate handler for message input
+  const handleMessageChange = (e) => {
+    setMessage(e.target.value);
+  };
+
+  // ✅ FIX 3: Separate handler for Enter key
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey && message.trim()) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   const sendMessage = () => {
@@ -626,9 +762,9 @@ export default function VideoMeetComponent() {
             🎥 Room: {url}
           </Typography>
           {isHost && (
-            <Chip 
-              label="HOST" 
-              color="primary" 
+            <Chip
+              label="HOST"
+              color="primary"
               size="small"
               sx={{ bgcolor: "#00d4ff", fontWeight: "bold" }}
             />
@@ -640,10 +776,7 @@ export default function VideoMeetComponent() {
           </Typography>
           {isHost && (
             <>
-              <IconButton 
-                onClick={handleMenuOpen}
-                sx={{ color: "white" }}
-              >
+              <IconButton onClick={handleMenuOpen} sx={{ color: "white" }}>
                 <MoreVertIcon />
               </IconButton>
               <Menu
@@ -739,18 +872,25 @@ export default function VideoMeetComponent() {
               sx={{
                 gridColumn: "1 / -1",
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 color: "white",
-                fontSize: "1.2rem",
+                gap: 2,
               }}
             >
-              Waiting for others to join...
+              <Typography fontSize="1.5rem">
+                Waiting for others to join...
+              </Typography>
+              <Typography fontSize="1rem" sx={{ color: "#999" }}>
+                Share Room ID:{" "}
+                <strong style={{ color: "#00d4ff" }}>{url}</strong>
+              </Typography>
             </Box>
           )}
         </Box>
 
-        {/* Host Video - Small Corner */}
+        {/* Local Video - Small Corner */}
         <Box
           sx={{
             position: "absolute",
@@ -888,13 +1028,15 @@ export default function VideoMeetComponent() {
                 fullWidth
                 size="small"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={handleMessageChange}
+                onKeyPress={handleKeyPress}
                 placeholder="Type a message..."
-                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                autoComplete="off"
               />
               <Button
                 variant="contained"
                 onClick={sendMessage}
+                disabled={!message.trim()}
                 sx={{ bgcolor: "#00d4ff" }}
               >
                 Send

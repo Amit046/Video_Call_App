@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 let connections = {};
 let messages = {};
 let timeOnline = {};
-let usernames = {}; // Track usernames by socket ID
+let usernames = {};
 
 export const connectToSocket = (server) => {
   const io = new Server(server, {
@@ -13,45 +13,62 @@ export const connectToSocket = (server) => {
       allowedHeaders: ["*"],
       credentials: true,
     },
+    transports: ["websocket", "polling"],
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
+  console.log("🚀 Socket.IO Server Started");
+
   io.on("connection", (socket) => {
-    console.log("✅ USER CONNECTED:", socket.id);
+    console.log("\n========================================");
+    console.log("✅ NEW CONNECTION");
+    console.log("   Socket ID:", socket.id);
+    console.log("   Transport:", socket.conn.transport.name);
+    console.log("========================================\n");
 
     socket.on("join-call", (path, username) => {
-      console.log(`👤 ${username} joining room: ${path}`);
-      
+      console.log(`\n👤 JOIN-CALL REQUEST`);
+      console.log(`   User: ${username}`);
+      console.log(`   Room: ${path}`);
+      console.log(`   Socket: ${socket.id}`);
+
+      // Initialize room if doesn't exist
       if (connections[path] === undefined) {
         connections[path] = [];
+        console.log(`   🆕 Created new room: ${path}`);
       }
 
+      // Add user to room
       connections[path].push(socket.id);
       timeOnline[socket.id] = new Date();
-      usernames[socket.id] = username || "User"; // Store username
+      usernames[socket.id] = username || "User";
 
-      console.log(`📋 Room ${path} clients:`, connections[path]);
+      console.log(
+        `   📋 Room now has ${connections[path].length} participants`
+      );
+      console.log(`   👥 Participants:`, connections[path]);
 
-      // Notify all users in the room (including the new joiner)
+      // Notify ALL users in the room (including the new joiner)
       for (let a = 0; a < connections[path].length; a++) {
         const clientId = connections[path][a];
-        
-        // Send username of the joining user, not the receiving user
+
+        console.log(`   📤 Notifying ${clientId} about user-joined`);
         io.to(clientId).emit(
           "user-joined",
-          socket.id,           // ID of the user who joined
-          username || "User",  // Username of joining user
-          connections[path]    // Array of all socket IDs in room
+          socket.id, // ID of joining user
+          username || "User", // Username of joining user
+          connections[path] // All socket IDs in room
         );
       }
 
-      console.log(`✅ Emitted user-joined event`);
-      console.log(`   - Joiner ID: ${socket.id}`);
-      console.log(`   - Username: ${username}`);
-      console.log(`   - Clients in room:`, connections[path]);
+      console.log(`   ✅ Join complete\n`);
 
-      // Send chat history to the new joiner
-      if (messages[path] !== undefined) {
-        console.log(`📨 Sending ${messages[path].length} chat messages to ${socket.id}`);
+      // Send chat history to new joiner
+      if (messages[path] !== undefined && messages[path].length > 0) {
+        console.log(
+          `   💬 Sending ${messages[path].length} messages to ${socket.id}`
+        );
         for (let a = 0; a < messages[path].length; ++a) {
           io.to(socket.id).emit(
             "chat-message",
@@ -64,13 +81,25 @@ export const connectToSocket = (server) => {
     });
 
     socket.on("signal", (toId, message) => {
-      console.log(`📡 Signal from ${socket.id} to ${toId}`);
+      console.log(`📡 SIGNAL: ${socket.id} → ${toId}`);
+      try {
+        const signal = JSON.parse(message);
+        if (signal.sdp) {
+          console.log(`   Type: SDP ${signal.sdp.type}`);
+        } else if (signal.ice) {
+          console.log(`   Type: ICE candidate`);
+        }
+      } catch (e) {}
+
       io.to(toId).emit("signal", socket.id, message);
     });
 
     socket.on("chat-message", (data, sender) => {
-      console.log(`💬 Chat message from ${sender}: ${data}`);
-      
+      console.log(`\n💬 CHAT MESSAGE`);
+      console.log(`   From: ${sender} (${socket.id})`);
+      console.log(`   Message: ${data}`);
+
+      // Find which room the socket is in
       const [matchingRoom, found] = Object.entries(connections).reduce(
         ([room, isFound], [roomKey, roomValue]) => {
           if (!isFound && roomValue.includes(socket.id)) {
@@ -92,70 +121,80 @@ export const connectToSocket = (server) => {
           "socket-id-sender": socket.id,
         });
 
-        console.log(`📤 Broadcasting message to ${connections[matchingRoom].length} clients in room ${matchingRoom}`);
+        console.log(
+          `   📤 Broadcasting to ${connections[matchingRoom].length} clients`
+        );
 
+        // Broadcast to everyone in room
         connections[matchingRoom].forEach((socketId) => {
           io.to(socketId).emit("chat-message", data, sender, socket.id);
         });
       } else {
-        console.log(`❌ Room not found for socket ${socket.id}`);
+        console.log(`   ❌ Room not found for socket ${socket.id}`);
       }
     });
 
     // Host powers
     socket.on("host-mute-all", (roomId) => {
-      console.log(`🔇 Host muting all in room: ${roomId}`);
+      console.log(`\n🔇 HOST MUTE ALL - Room: ${roomId}`);
       if (connections[roomId]) {
         connections[roomId].forEach((socketId) => {
           if (socketId !== socket.id) {
             io.to(socketId).emit("force-mute");
+            console.log(`   🔇 Muted ${socketId}`);
           }
         });
       }
     });
 
     socket.on("host-end-meeting", (roomId) => {
-      console.log(`❌ Host ending meeting in room: ${roomId}`);
+      console.log(`\n❌ HOST END MEETING - Room: ${roomId}`);
       if (connections[roomId]) {
         connections[roomId].forEach((socketId) => {
           io.to(socketId).emit("meeting-ended");
         });
-        // Clean up room
         delete connections[roomId];
         delete messages[roomId];
+        console.log(`   🧹 Room ${roomId} cleaned up`);
       }
     });
 
     socket.on("disconnect", () => {
-      console.log(`❌ USER DISCONNECTED: ${socket.id}`);
-      
+      console.log("\n========================================");
+      console.log("❌ DISCONNECT");
+      console.log("   Socket ID:", socket.id);
+      console.log("   Username:", usernames[socket.id] || "Unknown");
+
       let key;
       let disconnectedUser = false;
 
+      // Find and remove from room
       for (const [k, v] of Object.entries(connections)) {
         for (let a = 0; a < v.length; ++a) {
           if (v[a] === socket.id) {
             key = k;
             disconnectedUser = true;
 
-            console.log(`👋 User left room: ${key}`);
+            console.log(`   👋 User left room: ${key}`);
 
-            // Notify all remaining users
-            for (let a = 0; a < connections[key].length; ++a) {
-              if (connections[key][a] !== socket.id) {
-                io.to(connections[key][a]).emit("user-left", socket.id);
+            // Notify remaining users
+            for (let b = 0; b < connections[key].length; ++b) {
+              if (connections[key][b] !== socket.id) {
+                io.to(connections[key][b]).emit("user-left", socket.id);
               }
             }
 
-            // Remove from connections
+            // Remove from array
             var index = connections[key].indexOf(socket.id);
             connections[key].splice(index, 1);
 
-            console.log(`📋 Room ${key} now has ${connections[key].length} clients`);
+            console.log(
+              `   📋 Room ${key} now has ${connections[key].length} participants`
+            );
 
             // Clean up empty rooms
             if (connections[key].length === 0) {
-              console.log(`🧹 Cleaning up empty room: ${key}`);
+              console.log(`   🧹 Cleaning up empty room: ${key}`);
               delete connections[key];
               delete messages[key];
             }
@@ -166,9 +205,11 @@ export const connectToSocket = (server) => {
         if (disconnectedUser) break;
       }
 
-      // Clean up time tracking and username
+      // Clean up
       delete timeOnline[socket.id];
       delete usernames[socket.id];
+
+      console.log("========================================\n");
     });
   });
 
