@@ -13,9 +13,17 @@ export const connectToSocket = (server) => {
       allowedHeaders: ["*"],
       credentials: true,
     },
-    transports: ["websocket", "polling"],
+    // ✅ RENDER PRODUCTION FIX
+    transports: ["polling", "websocket"], // polling first!
+    allowUpgrades: true,
+    upgradeTimeout: 30000,
     pingTimeout: 60000,
     pingInterval: 25000,
+    connectTimeout: 45000,
+    maxHttpBufferSize: 1e6,
+    perMessageDeflate: false,
+    httpCompression: false,
+    cookie: false,
   });
 
   console.log("🚀 Socket.IO Server Started");
@@ -49,20 +57,29 @@ export const connectToSocket = (server) => {
       );
       console.log(`   👥 Participants:`, connections[path]);
 
-      // Notify ALL users in the room (including the new joiner)
+      console.log(`   ✅ Join complete\n`);
+
+      // ✅ CRITICAL FIX: Emit AFTER user is added to room
+      // Notify ALL users in the room about the new joiner
+      console.log(
+        `   📤 Broadcasting user-joined to all ${connections[path].length} clients`
+      );
+
       for (let a = 0; a < connections[path].length; a++) {
         const clientId = connections[path][a];
 
-        console.log(`   📤 Notifying ${clientId} about user-joined`);
+        console.log(`      → Sending to: ${clientId}`);
+
+        // Send: (joinerSocketId, joinerUsername, allClientsArray)
         io.to(clientId).emit(
           "user-joined",
-          socket.id, // ID of joining user
-          username || "User", // Username of joining user
-          connections[path] // All socket IDs in room
+          socket.id, // ID of user who just joined
+          username || "User", // Username of joiner
+          connections[path] // Array of ALL socket IDs in room
         );
       }
 
-      console.log(`   ✅ Join complete\n`);
+      console.log(`   ✅ Broadcast complete\n`);
 
       // Send chat history to new joiner
       if (messages[path] !== undefined && messages[path].length > 0) {

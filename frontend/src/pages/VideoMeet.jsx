@@ -466,14 +466,24 @@ export default function VideoMeetComponent() {
 
   const connectToSocketServer = () => {
     console.log("\n🌐 Connecting to socket server:", server_url);
+    console.log("   Using HTTPS:", server_url.startsWith("https"));
 
     socketRef.current = io.connect(server_url, {
-      secure: false,
-      transports: ["websocket", "polling"],
+      secure: server_url.startsWith("https"), // ✅ Auto-detect HTTPS
+      transports: ["polling", "websocket"], // ✅ polling first for Render
       reconnection: true,
       reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       reconnectionAttempts: 10,
+      timeout: 45000, // ✅ Increased timeout for Render
+      forceNew: false,
+      upgrade: true,
+      rememberUpgrade: true,
+      path: "/socket.io/",
     });
+
+    console.log("   ✅ Socket instance created");
+    console.log("   Transport:", socketRef.current.io.opts.transports);
 
     socketRef.current.on("signal", gotMessageFromServer);
 
