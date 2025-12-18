@@ -176,10 +176,65 @@ export default function VideoMeetComponent() {
           showNotification("Error accessing media", "error");
         });
     } else {
+      // ✅ FIX 2: When both video and audio are OFF, send black/silent tracks
+      console.log("⏸️ Stopping all tracks and sending black/silent");
+
       try {
-        let tracks = localVideoref.current.srcObject.getTracks();
-        tracks.forEach((track) => track.stop());
+        if (window.localStream) {
+          window.localStream.getTracks().forEach((track) => track.stop());
+        }
       } catch (e) {}
+
+      // Create black video and silent audio
+      const blackTrack = black({ width: 640, height: 480 });
+      const silentTrack = silence();
+      const blackSilenceStream = new MediaStream([blackTrack, silentTrack]);
+
+      window.localStream = blackSilenceStream;
+      if (localVideoref.current) {
+        localVideoref.current.srcObject = blackSilenceStream;
+      }
+
+      console.log("🔄 Replacing tracks with black/silent for all peers");
+
+      // ✅ CRITICAL: Replace tracks for ALL peer connections
+      Object.keys(connections).forEach((id) => {
+        if (id === socketIdRef.current) return;
+
+        const pc = connections[id];
+        console.log(`   Updating connection: ${id}`);
+
+        const senders = pc.getSenders();
+
+        blackSilenceStream.getTracks().forEach((track) => {
+          const sender = senders.find((s) => s.track?.kind === track.kind);
+          if (sender) {
+            console.log(`      🔄 Replacing ${track.kind} with black/silent`);
+            sender.replaceTrack(track).catch((e) => {
+              console.error("      ❌ Replace track error:", e);
+            });
+          } else {
+            console.log(`      ➕ Adding ${track.kind} black/silent track`);
+            pc.addTrack(track, blackSilenceStream);
+          }
+        });
+
+        // Create new offer after replacing tracks
+        pc.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: true,
+        })
+          .then((description) => pc.setLocalDescription(description))
+          .then(() => {
+            console.log(`      📤 Sending offer to ${id}`);
+            socketRef.current.emit(
+              "signal",
+              id,
+              JSON.stringify({ sdp: pc.localDescription })
+            );
+          })
+          .catch((e) => console.error(e));
+      });
     }
   };
 
@@ -335,33 +390,55 @@ export default function VideoMeetComponent() {
       if (signal.sdp) {
         console.log("   📡 Received SDP:", signal.sdp.type, "from:", fromId);
 
-        pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
-          .then(() => {
-            console.log("   ✅ Remote description set for:", fromId);
-            if (signal.sdp.type === "offer") {
-              console.log("   📤 Creating answer for:", fromId);
-              return pc.createAnswer({
-                offerToReceiveAudio: true,
-                offerToReceiveVideo: true,
-              });
-            }
-          })
-          .then((description) => {
-            if (description) {
-              return pc.setLocalDescription(description);
-            }
-          })
-          .then(() => {
-            if (signal.sdp.type === "offer") {
-              console.log("   📤 Sending answer to:", fromId);
-              socketRef.current.emit(
-                "signal",
-                fromId,
-                JSON.stringify({ sdp: pc.localDescription })
-              );
-            }
-          })
-          .catch((e) => console.error("   ❌ SDP error:", e));
+        // ✅ FIX: Check connection state before setting remote description
+        const currentState = pc.signalingState;
+        console.log("   📊 Current signaling state:", currentState);
+
+        // Only process if in correct state
+        if (signal.sdp.type === "offer") {
+          // Can receive offer in 'stable' or 'have-local-offer' state
+          if (
+            currentState === "stable" ||
+            currentState === "have-remote-offer"
+          ) {
+            pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+              .then(() => {
+                console.log("   ✅ Remote description set for:", fromId);
+                console.log("   📤 Creating answer for:", fromId);
+                return pc.createAnswer({
+                  offerToReceiveAudio: true,
+                  offerToReceiveVideo: true,
+                });
+              })
+              .then((description) => {
+                if (description) {
+                  return pc.setLocalDescription(description);
+                }
+              })
+              .then(() => {
+                console.log("   📤 Sending answer to:", fromId);
+                socketRef.current.emit(
+                  "signal",
+                  fromId,
+                  JSON.stringify({ sdp: pc.localDescription })
+                );
+              })
+              .catch((e) => console.error("   ❌ SDP error:", e));
+          } else {
+            console.log("   ⚠️ Ignoring offer - wrong state:", currentState);
+          }
+        } else if (signal.sdp.type === "answer") {
+          // Can receive answer only in 'have-local-offer' state
+          if (currentState === "have-local-offer") {
+            pc.setRemoteDescription(new RTCSessionDescription(signal.sdp))
+              .then(() => {
+                console.log("   ✅ Answer set successfully for:", fromId);
+              })
+              .catch((e) => console.error("   ❌ Answer error:", e));
+          } else {
+            console.log("   ⚠️ Ignoring answer - wrong state:", currentState);
+          }
+        }
       }
 
       if (signal.ice) {
@@ -427,6 +504,23 @@ export default function VideoMeetComponent() {
 
       if (pc.iceConnectionState === "connected") {
         console.log("   ✅ Connected to:", socketId);
+        // ✅ Set higher bitrate after connection
+        const senders = pc.getSenders();
+        senders.forEach((sender) => {
+          if (sender.track && sender.track.kind === "video") {
+            const params = sender.getParameters();
+            if (!params.encodings) {
+              params.encodings = [{}];
+            }
+            // Set high bitrate for better quality
+            params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+            params.encodings[0].maxFramerate = 30;
+            sender
+              .setParameters(params)
+              .then(() => console.log("      ✅ Video bitrate increased"))
+              .catch((e) => console.log("      ⚠️ Bitrate setting failed:", e));
+          }
+        });
       } else if (
         pc.iceConnectionState === "disconnected" ||
         pc.iceConnectionState === "failed"
@@ -445,8 +539,21 @@ export default function VideoMeetComponent() {
     if (window.localStream) {
       console.log("   ➕ Adding local tracks to peer:", socketId);
       window.localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, window.localStream);
+        const sender = pc.addTrack(track, window.localStream);
         console.log("      ✅ Added track:", track.kind);
+
+        // ✅ Set high bitrate for video
+        if (track.kind === "video") {
+          const params = sender.getParameters();
+          if (!params.encodings) {
+            params.encodings = [{}];
+          }
+          params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+          params.encodings[0].maxFramerate = 30;
+          sender
+            .setParameters(params)
+            .catch((e) => console.log("      ⚠️ Bitrate error:", e));
+        }
       });
     }
 
