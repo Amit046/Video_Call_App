@@ -52,7 +52,7 @@ export default function LandingPage() {
       setError("Please generate or enter a room ID first!");
       return;
     }
-    const link = `${window.location.origin}/${roomId}?username=`;
+    const link = `${window.location.origin}/${roomId}`;
     navigator.clipboard.writeText(link);
     setShowCopied(true);
   };
@@ -62,7 +62,7 @@ export default function LandingPage() {
       setError("Please generate or enter a room ID first!");
       return;
     }
-    const link = `${window.location.origin}/${roomId}?username=`;
+    const link = `${window.location.origin}/${roomId}`;
 
     if (navigator.share) {
       try {
@@ -97,7 +97,7 @@ export default function LandingPage() {
         flexDirection: "column",
       }}
     >
-      {/* Animated Background */}
+      {/* Animated Background with Gradient */}
       <Box
         sx={{
           position: "absolute",
@@ -111,6 +111,22 @@ export default function LandingPage() {
             radial-gradient(circle at 50% 50%, rgba(255, 195, 113, 0.1) 0%, transparent 50%)
           `,
           animation: "pulse 20s ease-in-out infinite",
+        }}
+      />
+
+      {/* Background Image on Left Side */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "50%",
+          height: "100%",
+          backgroundImage: "url(/background.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.15,
+          zIndex: 1,
         }}
       />
 

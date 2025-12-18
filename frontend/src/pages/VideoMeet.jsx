@@ -161,10 +161,30 @@ export default function VideoMeetComponent() {
   };
 
   const getUserMedia = () => {
-    if ((video && videoAvailable) || (audio && audioAvailable)) {
-      console.log("🎥 Getting user media - Video:", video, "Audio:", audio);
+    // ✅ Simple approach: Just enable/disable tracks instead of replacing stream
+    if (window.localStream) {
+      const videoTracks = window.localStream.getVideoTracks();
+      const audioTracks = window.localStream.getAudioTracks();
 
-      // ✅ FIX 1: Use HD constraints
+      console.log("🎛️ Toggling tracks - Video:", video, "Audio:", audio);
+
+      videoTracks.forEach((track) => {
+        track.enabled = video;
+        console.log(`   Video track enabled: ${video}`);
+      });
+
+      audioTracks.forEach((track) => {
+        track.enabled = audio;
+        console.log(`   Audio track enabled: ${audio}`);
+      });
+
+      return; // Don't need to replace stream, just enable/disable
+    }
+
+    // ✅ Only get new media if we don't have a stream yet
+    if ((video && videoAvailable) || (audio && audioAvailable)) {
+      console.log("🎥 Getting NEW user media - Video:", video, "Audio:", audio);
+
       navigator.mediaDevices
         .getUserMedia({
           video: video ? HD_VIDEO_CONSTRAINTS : false,
@@ -175,66 +195,6 @@ export default function VideoMeetComponent() {
           console.error("getUserMedia error:", e);
           showNotification("Error accessing media", "error");
         });
-    } else {
-      // ✅ FIX 2: When both video and audio are OFF, send black/silent tracks
-      console.log("⏸️ Stopping all tracks and sending black/silent");
-
-      try {
-        if (window.localStream) {
-          window.localStream.getTracks().forEach((track) => track.stop());
-        }
-      } catch (e) {}
-
-      // Create black video and silent audio
-      const blackTrack = black({ width: 640, height: 480 });
-      const silentTrack = silence();
-      const blackSilenceStream = new MediaStream([blackTrack, silentTrack]);
-
-      window.localStream = blackSilenceStream;
-      if (localVideoref.current) {
-        localVideoref.current.srcObject = blackSilenceStream;
-      }
-
-      console.log("🔄 Replacing tracks with black/silent for all peers");
-
-      // ✅ CRITICAL: Replace tracks for ALL peer connections
-      Object.keys(connections).forEach((id) => {
-        if (id === socketIdRef.current) return;
-
-        const pc = connections[id];
-        console.log(`   Updating connection: ${id}`);
-
-        const senders = pc.getSenders();
-
-        blackSilenceStream.getTracks().forEach((track) => {
-          const sender = senders.find((s) => s.track?.kind === track.kind);
-          if (sender) {
-            console.log(`      🔄 Replacing ${track.kind} with black/silent`);
-            sender.replaceTrack(track).catch((e) => {
-              console.error("      ❌ Replace track error:", e);
-            });
-          } else {
-            console.log(`      ➕ Adding ${track.kind} black/silent track`);
-            pc.addTrack(track, blackSilenceStream);
-          }
-        });
-
-        // Create new offer after replacing tracks
-        pc.createOffer({
-          offerToReceiveAudio: true,
-          offerToReceiveVideo: true,
-        })
-          .then((description) => pc.setLocalDescription(description))
-          .then(() => {
-            console.log(`      📤 Sending offer to ${id}`);
-            socketRef.current.emit(
-              "signal",
-              id,
-              JSON.stringify({ sdp: pc.localDescription })
-            );
-          })
-          .catch((e) => console.error(e));
-      });
     }
   };
 
@@ -763,13 +723,33 @@ export default function VideoMeetComponent() {
   };
 
   const handleVideo = () => {
-    console.log("🎥 Toggle video:", !video);
-    setVideo(!video);
+    console.log("🎥 Toggle video from", video, "to", !video);
+    const newVideoState = !video;
+    setVideo(newVideoState);
+
+    // ✅ Immediately update track enabled state while new stream is loading
+    if (window.localStream) {
+      const videoTracks = window.localStream.getVideoTracks();
+      videoTracks.forEach((track) => {
+        track.enabled = newVideoState;
+        console.log(`   Set video track enabled: ${newVideoState}`);
+      });
+    }
   };
 
   const handleAudio = () => {
-    console.log("🎤 Toggle audio:", !audio);
-    setAudio(!audio);
+    console.log("🎤 Toggle audio from", audio, "to", !audio);
+    const newAudioState = !audio;
+    setAudio(newAudioState);
+
+    // ✅ Immediately update track enabled state
+    if (window.localStream) {
+      const audioTracks = window.localStream.getAudioTracks();
+      audioTracks.forEach((track) => {
+        track.enabled = newAudioState;
+        console.log(`   Set audio track enabled: ${newAudioState}`);
+      });
+    }
   };
 
   const handleScreen = () => {
