@@ -346,7 +346,7 @@ export default function LandingPage() {
                   fontWeight: 400,
                 }}
               >
-                Crystal-clear video calls with just a name and room code.
+                Cover a distance by Apna Video Call....
                 <br />
                 No sign-up, no hassle. Just pure connection.
               </Typography>
