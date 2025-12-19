@@ -30,11 +30,13 @@ import { useLocation, useParams } from "react-router-dom";
 const server_url = server;
 const connections = {};
 
-// ✅ FIX 1: HD VIDEO CONSTRAINTS
+// ✅ FIX 1: BETTER HD VIDEO CONSTRAINTS
 const HD_VIDEO_CONSTRAINTS = {
-  width: { ideal: 1280, max: 1920 },
-  height: { ideal: 720, max: 1080 },
-  frameRate: { ideal: 30, max: 60 },
+  width: { ideal: 1920, min: 1280 },
+  height: { ideal: 1080, min: 720 },
+  frameRate: { ideal: 30, min: 24 },
+  facingMode: "user",
+  aspectRatio: 16 / 9,
 };
 
 const HD_AUDIO_CONSTRAINTS = {
@@ -42,6 +44,7 @@ const HD_AUDIO_CONSTRAINTS = {
   noiseSuppression: true,
   autoGainControl: true,
   sampleRate: 48000,
+  channelCount: 2,
 };
 
 const peerConfigConnections = {
@@ -464,7 +467,7 @@ export default function VideoMeetComponent() {
 
       if (pc.iceConnectionState === "connected") {
         console.log("   ✅ Connected to:", socketId);
-        // ✅ Set higher bitrate after connection
+        // ✅ Set MAXIMUM bitrate for crystal clear video
         const senders = pc.getSenders();
         senders.forEach((sender) => {
           if (sender.track && sender.track.kind === "video") {
@@ -472,13 +475,26 @@ export default function VideoMeetComponent() {
             if (!params.encodings) {
               params.encodings = [{}];
             }
-            // Set high bitrate for better quality
-            params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+            // ✅ INCREASED BITRATE for better quality
+            params.encodings[0].maxBitrate = 5000000; // 5 Mbps (was 2.5)
             params.encodings[0].maxFramerate = 30;
+            params.encodings[0].scaleResolutionDownBy = 1; // No downscaling
+            params.encodings[0].priority = "high";
             sender
               .setParameters(params)
-              .then(() => console.log("      ✅ Video bitrate increased"))
+              .then(() => console.log("      ✅ Video bitrate: 5 Mbps"))
               .catch((e) => console.log("      ⚠️ Bitrate setting failed:", e));
+          }
+          if (sender.track && sender.track.kind === "audio") {
+            const params = sender.getParameters();
+            if (!params.encodings) {
+              params.encodings = [{}];
+            }
+            params.encodings[0].maxBitrate = 128000; // 128 kbps audio
+            params.encodings[0].priority = "high";
+            sender
+              .setParameters(params)
+              .catch((e) => console.log("Audio bitrate error:", e));
           }
         });
       } else if (
@@ -502,17 +518,30 @@ export default function VideoMeetComponent() {
         const sender = pc.addTrack(track, window.localStream);
         console.log("      ✅ Added track:", track.kind);
 
-        // ✅ Set high bitrate for video
+        // ✅ Set MAXIMUM bitrate for each track
         if (track.kind === "video") {
           const params = sender.getParameters();
           if (!params.encodings) {
             params.encodings = [{}];
           }
-          params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
+          params.encodings[0].maxBitrate = 5000000; // 5 Mbps
           params.encodings[0].maxFramerate = 30;
+          params.encodings[0].scaleResolutionDownBy = 1; // No downscaling
+          params.encodings[0].priority = "high";
           sender
             .setParameters(params)
             .catch((e) => console.log("      ⚠️ Bitrate error:", e));
+        }
+        if (track.kind === "audio") {
+          const params = sender.getParameters();
+          if (!params.encodings) {
+            params.encodings = [{}];
+          }
+          params.encodings[0].maxBitrate = 128000; // 128 kbps
+          params.encodings[0].priority = "high";
+          sender
+            .setParameters(params)
+            .catch((e) => console.log("      ⚠️ Audio bitrate error:", e));
         }
       });
     }
@@ -908,14 +937,14 @@ export default function VideoMeetComponent() {
             flex: 1,
             display: "grid",
             gridTemplateColumns:
-              videos.length <= 1
+              videos.length === 1
                 ? "1fr"
-                : videos.length <= 4
-                ? "repeat(2, 1fr)"
-                : "repeat(3, 1fr)",
+                : "repeat(auto-fit, minmax(400px, 1fr))",
             gap: 2,
             p: 2,
-            alignContent: "center",
+            alignContent: "start",
+            height: "100%",
+            overflow: "auto",
           }}
         >
           {videos.map((video) => (
@@ -927,9 +956,12 @@ export default function VideoMeetComponent() {
                 borderRadius: 2,
                 overflow: "hidden",
                 aspectRatio: "16/9",
+                minHeight: { xs: "200px", sm: "300px", md: "400px" },
+                maxHeight: "80vh",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                boxShadow: "0 4px 20px rgba(0, 212, 255, 0.3)",
               }}
             >
               <video
@@ -944,7 +976,7 @@ export default function VideoMeetComponent() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
+                  objectFit: "cover", // ✅ Changed from contain to cover for better face visibility
                 }}
               />
               <Box
@@ -974,6 +1006,7 @@ export default function VideoMeetComponent() {
                 alignItems: "center",
                 color: "white",
                 gap: 2,
+                minHeight: "400px",
               }}
             >
               <Typography fontSize="1.5rem">
@@ -987,18 +1020,18 @@ export default function VideoMeetComponent() {
           )}
         </Box>
 
-        {/* Local Video - Small Corner */}
+        {/* Local Video - Larger on Mobile */}
         <Box
           sx={{
             position: "absolute",
-            bottom: 80,
-            right: 20,
-            width: { xs: 150, sm: 200, md: 250 },
+            bottom: { xs: 70, sm: 80 },
+            right: { xs: 10, sm: 20 },
+            width: { xs: "140px", sm: "200px", md: "280px" },
             aspectRatio: "16/9",
             borderRadius: 2,
             overflow: "hidden",
             boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-            border: "2px solid #00d4ff",
+            border: "3px solid #00d4ff",
             bgcolor: "#000",
             zIndex: 10,
           }}
@@ -1011,7 +1044,7 @@ export default function VideoMeetComponent() {
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "cover", // ✅ Better face framing
               transform: "scaleX(-1)",
             }}
           />
@@ -1026,7 +1059,12 @@ export default function VideoMeetComponent() {
               borderRadius: 1,
             }}
           >
-            <Typography sx={{ color: "white", fontSize: "0.75rem" }}>
+            <Typography
+              sx={{
+                color: "white",
+                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+              }}
+            >
               You {isHost && "(Host)"}
             </Typography>
           </Box>
@@ -1149,24 +1187,31 @@ export default function VideoMeetComponent() {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: 2,
-          p: 2,
+          gap: { xs: 1, sm: 2 },
+          p: { xs: 1.5, sm: 2 },
           bgcolor: "#2d2d2d",
+          flexWrap: "wrap",
         }}
       >
         <IconButton
           onClick={handleVideo}
           sx={{
             bgcolor: video ? "rgba(255,255,255,0.1)" : "rgba(244,67,54,0.8)",
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": {
               bgcolor: video ? "rgba(255,255,255,0.2)" : "rgba(244,67,54,1)",
             },
           }}
         >
           {video ? (
-            <VideocamIcon sx={{ color: "white" }} />
+            <VideocamIcon
+              sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }}
+            />
           ) : (
-            <VideocamOffIcon sx={{ color: "white" }} />
+            <VideocamOffIcon
+              sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }}
+            />
           )}
         </IconButton>
 
@@ -1174,15 +1219,17 @@ export default function VideoMeetComponent() {
           onClick={handleAudio}
           sx={{
             bgcolor: audio ? "rgba(255,255,255,0.1)" : "rgba(244,67,54,0.8)",
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": {
               bgcolor: audio ? "rgba(255,255,255,0.2)" : "rgba(244,67,54,1)",
             },
           }}
         >
           {audio ? (
-            <MicIcon sx={{ color: "white" }} />
+            <MicIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           ) : (
-            <MicOffIcon sx={{ color: "white" }} />
+            <MicOffIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           )}
         </IconButton>
 
@@ -1191,15 +1238,18 @@ export default function VideoMeetComponent() {
             onClick={handleScreen}
             sx={{
               bgcolor: screen ? "#00d4ff" : "rgba(255,255,255,0.1)",
+              width: { xs: 45, sm: 56 },
+              height: { xs: 45, sm: 56 },
+              display: { xs: "none", sm: "flex" }, // Hide on mobile
               "&:hover": {
                 bgcolor: screen ? "#0066ff" : "rgba(255,255,255,0.2)",
               },
             }}
           >
             {screen ? (
-              <StopScreenShareIcon sx={{ color: "white" }} />
+              <StopScreenShareIcon sx={{ color: "white", fontSize: 24 }} />
             ) : (
-              <ScreenShareIcon sx={{ color: "white" }} />
+              <ScreenShareIcon sx={{ color: "white", fontSize: 24 }} />
             )}
           </IconButton>
         )}
@@ -1208,10 +1258,12 @@ export default function VideoMeetComponent() {
           onClick={handleEndCall}
           sx={{
             bgcolor: "rgba(244,67,54,0.8)",
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": { bgcolor: "rgba(244,67,54,1)" },
           }}
         >
-          <CallEndIcon sx={{ color: "white" }} />
+          <CallEndIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
         </IconButton>
 
         <Badge badgeContent={newMessages} color="error">
@@ -1222,10 +1274,12 @@ export default function VideoMeetComponent() {
             }}
             sx={{
               bgcolor: "rgba(255,255,255,0.1)",
+              width: { xs: 45, sm: 56 },
+              height: { xs: 45, sm: 56 },
               "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
             }}
           >
-            <ChatIcon sx={{ color: "white" }} />
+            <ChatIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           </IconButton>
         </Badge>
       </Box>
