@@ -69,13 +69,16 @@ export const connectToSocket = (server) => {
         const clientId = connections[path][a];
 
         console.log(`      → Sending to: ${clientId}`);
+        console.log(
+          `      → Joiner: ${socket.id}, Username: ${username}, Clients: ${connections[path].length}`
+        );
 
-        // Send: (joinerSocketId, joinerUsername, allClientsArray)
+        // ✅ FIX: Send username as STRING, not in array format
         io.to(clientId).emit(
           "user-joined",
           socket.id, // ID of user who just joined
-          username || "User", // Username of joiner
-          connections[path] // Array of ALL socket IDs in room
+          username || "User", // Username as STRING
+          [...connections[path]] // Copy of array to avoid reference issues
         );
       }
 

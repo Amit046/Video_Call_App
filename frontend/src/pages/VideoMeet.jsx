@@ -88,6 +88,7 @@ export default function VideoMeetComponent() {
     severity: "info",
   });
   const [anchorEl, setAnchorEl] = useState(null);
+  const [connectionQuality, setConnectionQuality] = useState({}); // ✅ NEW: Track connection quality
 
   console.log("🎬 Component Render - Room:", url, "Username:", username);
 
@@ -465,6 +466,18 @@ export default function VideoMeetComponent() {
     pc.oniceconnectionstatechange = () => {
       console.log(`   🔌 ICE state [${socketId}]: ${pc.iceConnectionState}`);
 
+      // ✅ NEW: Update connection quality
+      const state = pc.iceConnectionState;
+      setConnectionQuality((prev) => ({
+        ...prev,
+        [socketId]:
+          state === "connected"
+            ? "good"
+            : state === "checking"
+            ? "checking"
+            : "poor",
+      }));
+
       if (pc.iceConnectionState === "connected") {
         console.log("   ✅ Connected to:", socketId);
         // ✅ Set MAXIMUM bitrate for crystal clear video
@@ -551,10 +564,27 @@ export default function VideoMeetComponent() {
 
   const addMessage = useCallback((data, sender, socketIdSender) => {
     console.log("💬 New message:", { data, sender, socketIdSender });
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { sender: sender, data: data, socketId: socketIdSender },
-    ]);
+
+    // ✅ FIX: Prevent duplicate messages
+    setMessages((prevMessages) => {
+      const isDuplicate = prevMessages.some(
+        (msg) =>
+          msg.data === data &&
+          msg.sender === sender &&
+          msg.socketId === socketIdSender
+      );
+
+      if (isDuplicate) {
+        console.log("   ⚠️ Duplicate message, skipping");
+        return prevMessages;
+      }
+
+      return [
+        ...prevMessages,
+        { sender: sender, data: data, socketId: socketIdSender },
+      ];
+    });
+
     if (socketIdSender !== socketIdRef.current) {
       setNewMessages((prevNewMessages) => prevNewMessages + 1);
     }
@@ -601,6 +631,10 @@ export default function VideoMeetComponent() {
       socketRef.current.on("user-left", (id) => {
         console.log("\n👋 User left:", id);
 
+        // ✅ Get username before removing
+        const leftUser = videos.find((v) => v.socketId === id);
+        const leftUsername = leftUser?.username || "A user";
+
         setVideos((videos) => videos.filter((video) => video.socketId !== id));
 
         if (connections[id]) {
@@ -609,29 +643,54 @@ export default function VideoMeetComponent() {
           delete connections[id];
         }
 
-        showNotification("A user left the call", "info");
+        // ✅ Show username in notification
+        showNotification(`${leftUsername} left the call`, "info");
       });
 
-      // ✅ FIX 4: MULTI-DEVICE CONNECTION FIX
+      // ✅ FIX 4: MULTI-DEVICE CONNECTION FIX + USERNAME TRACKING
       socketRef.current.on("user-joined", (...args) => {
         console.log("\n👤 USER-JOINED EVENT - RAW ARGS:", args);
+        console.log(
+          "   Arg types:",
+          args.map((a) => typeof a)
+        );
 
         // Parse arguments based on what server actually sends
         let id, joinerUsername, clients;
 
         if (args.length === 3) {
-          // Expected: (id, username, clients)
           id = args[0];
           joinerUsername = args[1];
           clients = args[2];
 
-          // Sometimes username comes as array, clients is undefined
-          if (Array.isArray(joinerUsername) && !clients) {
+          console.log(
+            "   Raw username:",
+            joinerUsername,
+            "Type:",
+            typeof joinerUsername
+          );
+
+          // ✅ FIX: Handle if username comes as array or string
+          if (Array.isArray(joinerUsername)) {
+            console.log("   ⚠️ Username is array, using clients instead");
             clients = joinerUsername;
             joinerUsername = "User";
+          } else if (typeof joinerUsername !== "string") {
+            console.log("   ⚠️ Username not a string, converting");
+            joinerUsername = String(joinerUsername || "User");
+          }
+
+          // Ensure clients is array
+          if (!Array.isArray(clients)) {
+            console.error("   ❌ Clients not array, checking args[1]");
+            if (Array.isArray(args[1])) {
+              clients = args[1];
+              joinerUsername = "User";
+            } else {
+              return;
+            }
           }
         } else if (args.length === 2) {
-          // Fallback: (id, clients)
           id = args[0];
           clients = args[1];
           joinerUsername = "User";
@@ -640,14 +699,20 @@ export default function VideoMeetComponent() {
           return;
         }
 
-        console.log("   ✅ PARSED:");
+        console.log("   ✅ FINAL PARSED:");
         console.log("      Joiner ID:", id);
-        console.log("      Username:", joinerUsername);
+        console.log(
+          "      Username:",
+          joinerUsername,
+          "(type:",
+          typeof joinerUsername,
+          ")"
+        );
         console.log("      Clients:", clients);
         console.log("      My ID:", socketIdRef.current);
 
         if (!Array.isArray(clients)) {
-          console.error("   ❌ Clients is not an array:", typeof clients);
+          console.error("   ❌ Clients is STILL not an array:", typeof clients);
           return;
         }
 
@@ -707,17 +772,29 @@ export default function VideoMeetComponent() {
           }, 1000);
         } else {
           // Someone else joined the room
-          console.log("   👋 Another user joined:", joinerUsername);
+          console.log(
+            "   👋 Another user joined with username:",
+            joinerUsername
+          );
+
+          // ✅ Ensure username is clean string
+          const cleanUsername = String(joinerUsername).trim() || "User";
+          console.log("   📝 Clean username for notification:", cleanUsername);
 
           // Create connection if we don't have one
           if (!connections[id]) {
             console.log("      🔗 Creating connection to new joiner:", id);
-            createPeerConnection(id, joinerUsername);
+            createPeerConnection(id, cleanUsername);
           } else {
             console.log("      ✅ Connection already exists to:", id);
           }
 
-          showNotification(`${joinerUsername} joined`, "success");
+          // ✅ Show notification with clean username
+          console.log(
+            "      📢 Showing notification:",
+            `${cleanUsername} joined the call`
+          );
+          showNotification(`${cleanUsername} joined the call`, "success");
         }
       });
     });
@@ -988,8 +1065,33 @@ export default function VideoMeetComponent() {
                   px: 2,
                   py: 0.5,
                   borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
                 }}
               >
+                {/* ✅ NEW: Connection Quality Indicator */}
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    bgcolor:
+                      connectionQuality[video.socketId] === "good"
+                        ? "#4CAF50"
+                        : connectionQuality[video.socketId] === "checking"
+                        ? "#FFC107"
+                        : "#F44336",
+                    animation:
+                      connectionQuality[video.socketId] === "checking"
+                        ? "pulse 1.5s infinite"
+                        : "none",
+                    "@keyframes pulse": {
+                      "0%, 100%": { opacity: 1 },
+                      "50%": { opacity: 0.5 },
+                    },
+                  }}
+                />
                 <Typography sx={{ color: "white", fontSize: "0.9rem" }}>
                   {video.username || "User"}
                 </Typography>
@@ -1020,20 +1122,22 @@ export default function VideoMeetComponent() {
           )}
         </Box>
 
-        {/* Local Video - Larger on Mobile */}
+        {/* Local Video - Larger Size for Better Face Visibility */}
         <Box
           sx={{
             position: "absolute",
             bottom: { xs: 70, sm: 80 },
             right: { xs: 10, sm: 20 },
-            width: { xs: "140px", sm: "200px", md: "280px" },
-            aspectRatio: "16/9",
+            width: { xs: "180px", sm: "260px", md: "320px" }, // ✅ Increased size
+            aspectRatio: "4/3", // ✅ Better aspect ratio for face
             borderRadius: 2,
             overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            boxShadow: "0 6px 30px rgba(0, 212, 255, 0.4)",
             border: "3px solid #00d4ff",
             bgcolor: "#000",
             zIndex: 10,
+            cursor: "grab",
+            "&:active": { cursor: "grabbing" },
           }}
         >
           <video
@@ -1044,31 +1148,36 @@ export default function VideoMeetComponent() {
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover", // ✅ Better face framing
+              objectFit: "cover", // ✅ Cover for better face framing
               transform: "scaleX(-1)",
             }}
           />
           <Box
             sx={{
               position: "absolute",
-              bottom: 5,
-              left: 5,
-              bgcolor: "rgba(0,0,0,0.7)",
-              px: 1,
-              py: 0.3,
+              bottom: 8,
+              left: 8,
+              bgcolor: "rgba(0,0,0,0.8)",
+              px: 1.5,
+              py: 0.5,
               borderRadius: 1,
+              backdropFilter: "blur(10px)",
             }}
           >
             <Typography
               sx={{
                 color: "white",
-                fontSize: { xs: "0.65rem", sm: "0.75rem" },
+                fontSize: { xs: "0.7rem", sm: "0.85rem" },
+                fontWeight: 600,
               }}
             >
-              You {isHost && "(Host)"}
+              You {isHost && "👑"}
             </Typography>
           </Box>
         </Box>
+
+        {/* Participants Dialog - Enhanced */}
+        {/* Note: This will be created as separate component */}
 
         {/* Chat Panel */}
         {showModal && (
@@ -1077,11 +1186,12 @@ export default function VideoMeetComponent() {
               position: "absolute",
               right: 20,
               top: 20,
-              width: { xs: "90%", sm: 350 },
-              height: "70%",
+              width: { xs: "90%", sm: 400 },
+              height: "75%",
               display: "flex",
               flexDirection: "column",
               zIndex: 20,
+              boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
             }}
           >
             <Box
