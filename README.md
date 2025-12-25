@@ -58,7 +58,7 @@ cd Video_Call_App
 ```bash
 cd backend
 npm install
-node src/app.js
+
 ```
 
 > Make sure MongoDB is running locally or update the DB URI in your code.
