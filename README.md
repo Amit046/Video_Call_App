@@ -6,7 +6,6 @@ A full-stack real-time **video conferencing web application** built using **Reac
 
 - 🔐 User authentication
 - 📞 Real-time video & audio calling
-- 📜 Meeting history tracking
 - ⚡ Socket.IO-based signaling
 - 📱 Responsive design for mobile & desktop
 
@@ -58,6 +57,7 @@ cd Video_Call_App
 ```bash
 cd backend
 npm install
+npm start
 
 ```
 
