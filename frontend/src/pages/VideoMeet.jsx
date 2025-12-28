@@ -901,6 +901,7 @@ export default function VideoMeetComponent() {
     }
     handleMenuClose();
   }; // ✅ MAIN FIX: Updated return JSX with proper video sizing
+  // ✅ FIXED: Complete return JSX with proper face visibility
   return (
     <Box
       sx={{
@@ -963,7 +964,7 @@ export default function VideoMeetComponent() {
         </Box>
       </Box>
 
-      {/* ✅ FIXED: Main Video Area with proper sizing */}
+      {/* ✅ FIXED: Main Video Area with CONTAIN for full face visibility */}
       <Box
         sx={{
           flex: 1,
@@ -973,7 +974,7 @@ export default function VideoMeetComponent() {
           width: "100%",
         }}
       >
-        {/* ✅ FIXED: Center - Full Screen Video Grid */}
+        {/* ✅ FIXED: Center - Full Screen Video Grid with CONTAIN */}
         <Box
           sx={{
             flex: 1,
@@ -989,13 +990,13 @@ export default function VideoMeetComponent() {
                 ? "repeat(2, 1fr)"
                 : videos.length === 4
                 ? "repeat(2, 1fr)"
-                : "repeat(auto-fit, minmax(500px, 1fr))", // ✅ INCREASED from 400px to 500px
+                : "repeat(auto-fit, minmax(500px, 1fr))",
             gridTemplateRows:
               videos.length === 0
                 ? "1fr"
                 : videos.length <= 2
                 ? "1fr"
-                : "repeat(auto-fit, minmax(400px, 1fr))", // ✅ Better row sizing
+                : "repeat(auto-fit, minmax(400px, 1fr))",
             gap: 2,
             p: 2,
             alignContent: "center",
@@ -1003,7 +1004,6 @@ export default function VideoMeetComponent() {
             height: "100%",
             width: "100%",
             overflow: "auto",
-            // ✅ Custom scrollbar
             "&::-webkit-scrollbar": {
               width: "8px",
               height: "8px",
@@ -1025,21 +1025,20 @@ export default function VideoMeetComponent() {
                 bgcolor: "#000",
                 borderRadius: 2,
                 overflow: "hidden",
-                // ✅ FIXED: Better aspect ratio and sizing
                 aspectRatio: "16/9",
                 width: "100%",
                 height: "100%",
                 minHeight: {
-                  xs: "250px", // ✅ INCREASED from 200px
-                  sm: "400px", // ✅ INCREASED from 300px
-                  md: "500px", // ✅ INCREASED from 400px
+                  xs: "250px",
+                  sm: "400px",
+                  md: "500px",
                 },
-                maxHeight: "calc(100vh - 180px)", // ✅ Better max height calculation
+                maxHeight: "calc(100vh - 180px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxShadow: "0 4px 20px rgba(0, 212, 255, 0.3)",
-                border: "2px solid #00d4ff", // ✅ Added border for better visibility
+                border: "2px solid #00d4ff",
               }}
             >
               <video
@@ -1054,7 +1053,7 @@ export default function VideoMeetComponent() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover", // ✅ Cover for better screen usage
+                  objectFit: "contain", // ✅ CHANGED from "cover" to "contain" for full face visibility
                   background: "#000",
                 }}
               />
@@ -1078,20 +1077,7 @@ export default function VideoMeetComponent() {
                     width: 8,
                     height: 8,
                     borderRadius: "50%",
-                    bgcolor:
-                      connectionQuality[video.socketId] === "good"
-                        ? "#4CAF50"
-                        : connectionQuality[video.socketId] === "checking"
-                        ? "#FFC107"
-                        : "#F44336",
-                    animation:
-                      connectionQuality[video.socketId] === "checking"
-                        ? "pulse 1.5s infinite"
-                        : "none",
-                    "@keyframes pulse": {
-                      "0%, 100%": { opacity: 1 },
-                      "50%": { opacity: 0.5 },
-                    },
+                    bgcolor: "#4CAF50",
                   }}
                 />
                 <Typography
@@ -1127,14 +1113,14 @@ export default function VideoMeetComponent() {
           )}
         </Box>
 
-        {/* ✅ FIXED: Local Video - Better sizing and positioning */}
+        {/* ✅ FIXED: Local Video - Better sizing with CONTAIN for mobile */}
         <Box
           sx={{
             position: "absolute",
-            bottom: { xs: 80, sm: 90 }, // ✅ Adjusted for better spacing
+            bottom: { xs: 80, sm: 90 },
             right: { xs: 15, sm: 20 },
-            width: { xs: "200px", sm: "280px", md: "350px" }, // ✅ INCREASED sizes
-            aspectRatio: "16/9", // ✅ Proper 16:9 ratio
+            width: { xs: "140px", sm: "220px", md: "280px" }, // ✅ REDUCED for mobile
+            aspectRatio: "4/3", // ✅ CHANGED back to 4/3 for better mobile view
             borderRadius: 2,
             overflow: "hidden",
             boxShadow: "0 6px 30px rgba(0, 212, 255, 0.5)",
@@ -1153,7 +1139,7 @@ export default function VideoMeetComponent() {
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "contain", // ✅ CHANGED from "cover" to "contain"
               transform: "scaleX(-1)",
               background: "#000",
             }}
@@ -1161,8 +1147,8 @@ export default function VideoMeetComponent() {
           <Box
             sx={{
               position: "absolute",
-              bottom: 8,
-              left: 8,
+              bottom: 6,
+              left: 6,
               bgcolor: "rgba(0,0,0,0.9)",
               px: 1.5,
               py: 0.5,
@@ -1173,7 +1159,7 @@ export default function VideoMeetComponent() {
             <Typography
               sx={{
                 color: "white",
-                fontSize: { xs: "0.75rem", sm: "0.9rem" },
+                fontSize: { xs: "0.65rem", sm: "0.8rem" },
                 fontWeight: 600,
               }}
             >
@@ -1331,7 +1317,7 @@ export default function VideoMeetComponent() {
         )}
       </Box>
 
-      {/* ✅ FIXED: Bottom Controls - Better spacing */}
+      {/* Bottom Controls */}
       <Box
         sx={{
           display: "flex",
@@ -1464,3 +1450,23 @@ export default function VideoMeetComponent() {
     </Box>
   );
 }
+
+// Helper functions remain same
+const silence = () => {
+  let ctx = new AudioContext();
+  let oscillator = ctx.createOscillator();
+  let dst = oscillator.connect(ctx.createMediaStreamDestination());
+  oscillator.start();
+  ctx.resume();
+  return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
+};
+
+const black = ({ width = 640, height = 480 } = {}) => {
+  let canvas = Object.assign(document.createElement("canvas"), {
+    width,
+    height,
+  });
+  canvas.getContext("2d").fillRect(0, 0, width, height);
+  let stream = canvas.captureStream();
+  return Object.assign(stream.getVideoTracks()[0], { enabled: false });
+};
