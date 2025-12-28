@@ -1,4 +1,4 @@
-/* Video Meet Container */
+/* ✅ FIXED Video Meet Container - Full Screen */
 .meetVideoContainer {
   width: 100vw;
   height: 100vh;
@@ -6,6 +6,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 /* Button Controls Container */
@@ -34,32 +35,36 @@
   transform: scale(1.1);
 }
 
-/* Host Video - Small Corner */
+/* ✅ FIXED: Host Video - Larger and Better Positioned */
 .meetUserVideo {
   position: fixed;
   bottom: 100px;
   right: 20px;
-  width: 250px;
+  width: 320px; /* ✅ INCREASED from 250px */
   height: auto;
   aspect-ratio: 16/9;
   border-radius: 12px;
-  border: 3px solid #FF9839;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 3px solid #00d4ff; /* ✅ Changed color */
+  box-shadow: 0 6px 30px rgba(0, 212, 255, 0.5); /* ✅ Enhanced shadow */
   object-fit: cover;
   transform: scaleX(-1);
   z-index: 50;
   background: #000;
 }
 
-/* Conference View - Center Grid */
+/* ✅ FIXED: Conference View - Full Screen Grid Layout */
 .conferenceView {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); /* ✅ INCREASED from 300px to 500px */
+  grid-template-rows: repeat(auto-fit, minmax(400px, 1fr)); /* ✅ Added row sizing */
+  gap: 20px; /* ✅ INCREASED gap */
   padding: 20px;
   align-content: center;
+  justify-content: center;
   overflow-y: auto;
+  width: 100%;
+  height: 100%;
 }
 
 .conferenceView > div {
@@ -68,13 +73,20 @@
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 16/9;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3); /* ✅ Enhanced shadow */
+  border: 2px solid #00d4ff; /* ✅ Added border */
+  width: 100%; /* ✅ Full width */
+  height: 100%; /* ✅ Full height */
+  min-height: 400px; /* ✅ INCREASED from implicit to explicit */
+  max-height: calc(100vh - 180px); /* ✅ Better max height */
 }
 
+/* ✅ FIXED: Video element - Full screen coverage */
 .conferenceView video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* ✅ Cover for better screen usage */
+  background: #000;
 }
 
 /* User Name Label */
@@ -82,12 +94,13 @@
   position: absolute;
   bottom: 10px;
   left: 10px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.9); /* ✅ Darker background */
   color: white;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  padding: 8px 15px; /* ✅ Increased padding */
+  border-radius: 8px; /* ✅ Larger radius */
+  font-size: 0.95rem; /* ✅ Slightly larger font */
+  font-weight: 600; /* ✅ Bolder */
+  backdrop-filter: blur(10px); /* ✅ Added blur */
 }
 
 /* Host Controls for Users */
@@ -99,16 +112,18 @@
   gap: 8px;
 }
 
-/* Chat Room */
+/* ✅ FIXED: Chat Room - Better styling */
 .chatRoom {
   position: fixed;
   right: 20px;
   top: 80px;
-  width: 350px;
+  width: 400px; /* ✅ INCREASED from 350px */
   height: calc(100vh - 200px);
+  max-height: calc(100vh - 180px); /* ✅ Added max height */
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5); /* ✅ Enhanced shadow */
+  border: 2px solid #00d4ff; /* ✅ Added border */
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -124,8 +139,9 @@
   padding: 15px 20px;
   margin: 0;
   font-size: 1.3rem;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid #00d4ff; /* ✅ Changed color */
   color: #333;
+  background: #f5f5f5; /* ✅ Added background */
 }
 
 .chattingDisplay {
@@ -135,15 +151,20 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: #f5f5f5; /* ✅ Added background */
 }
 
 .chattingDisplay::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* ✅ Wider scrollbar */
+}
+
+.chattingDisplay::-webkit-scrollbar-track {
+  background: #e0e0e0; /* ✅ Added track color */
 }
 
 .chattingDisplay::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
+  background: #00d4ff; /* ✅ Changed color */
+  border-radius: 4px; /* ✅ Larger radius */
 }
 
 .messageItem {
@@ -160,14 +181,15 @@
 }
 
 .messageContent {
-  background: #f0f0f0;
-  padding: 10px 14px;
+  background: white; /* ✅ Changed from #f0f0f0 */
+  padding: 12px 16px; /* ✅ Increased padding */
   border-radius: 12px;
   word-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* ✅ Added shadow */
 }
 
 .myMessage .messageContent {
-  background: #FF9839;
+  background: #00d4ff; /* ✅ Changed from #FF9839 */
   color: white;
 }
 
@@ -181,34 +203,47 @@
 
 .chattingArea {
   padding: 15px;
-  border-top: 2px solid #f0f0f0;
+  border-top: 2px solid #00d4ff; /* ✅ Changed color */
   display: flex;
   gap: 10px;
   align-items: center;
+  background: #f5f5f5; /* ✅ Added background */
 }
 
-/* Responsive Design */
+/* ✅ FIXED: Responsive Design - Better sizing */
+@media (max-width: 1024px) {
+  .conferenceView {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); /* ✅ Adjusted */
+  }
+}
+
 @media (max-width: 768px) {
   .meetUserVideo {
-    width: 150px;
-    bottom: 80px;
-    right: 10px;
+    width: 200px; /* ✅ INCREASED from 150px */
+    bottom: 90px; /* ✅ Adjusted */
+    right: 15px; /* ✅ Adjusted */
   }
 
   .buttonContainers {
-    gap: 10px;
-    padding: 12px 20px;
+    gap: 12px; /* ✅ Increased */
+    padding: 15px 20px; /* ✅ Adjusted */
   }
 
   .buttonContainers button {
-    width: 45px;
-    height: 45px;
+    width: 50px; /* ✅ INCREASED from 45px */
+    height: 50px; /* ✅ INCREASED from 45px */
   }
 
   .conferenceView {
     grid-template-columns: 1fr;
-    padding: 10px;
-    gap: 10px;
+    grid-template-rows: auto;
+    padding: 15px; /* ✅ Increased */
+    gap: 15px; /* ✅ Increased */
+  }
+
+  .conferenceView > div {
+    min-height: 300px; /* ✅ INCREASED from implicit */
+    max-height: 60vh; /* ✅ Better mobile height */
   }
 
   .chatRoom {
@@ -221,17 +256,24 @@
 
 @media (max-width: 480px) {
   .meetUserVideo {
-    width: 120px;
-    bottom: 70px;
+    width: 180px; /* ✅ INCREASED from 120px */
+    bottom: 85px; /* ✅ Adjusted */
+    right: 10px;
   }
 
   .buttonContainers button {
-    width: 40px;
-    height: 40px;
+    width: 45px; /* ✅ Slightly increased */
+    height: 45px; /* ✅ Slightly increased */
   }
 
   .conferenceView {
-    padding: 8px;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .conferenceView > div {
+    min-height: 250px; /* ✅ INCREASED */
+    max-height: 50vh;
   }
 }
 
@@ -242,24 +284,25 @@
   align-items: center;
   height: 100%;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.5rem; /* ✅ Increased */
   text-align: center;
+  padding: 20px;
 }
 
-/* Animations */
+/* ✅ Enhanced Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.95) translateY(10px); /* ✅ Added translateY */
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 .conferenceView > div {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.4s ease; /* ✅ Slightly longer */
 }
 
 /* Black Screen for Camera Off */
@@ -274,6 +317,90 @@
 
 .videoOff::after {
   content: '📷';
+  font-size: 4rem; /* ✅ Larger icon */
+  opacity: 0.4; /* ✅ More visible */
+}
+
+/* ✅ NEW: Scrollbar styling for main container */
+.meetVideoContainer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.meetVideoContainer::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.meetVideoContainer::-webkit-scrollbar-thumb {
+  background: #00d4ff;
+  border-radius: 4px;
+}
+
+.meetVideoContainer::-webkit-scrollbar-thumb:hover {
+  background: #0099cc;
+}
+
+/* ✅ NEW: Connection quality indicator */
+.connectionIndicator {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.6);
+}
+
+.connectionIndicator.checking {
+  background: #FFC107;
+  animation: pulse 1.5s infinite;
+}
+
+.connectionIndicator.poor {
+  background: #F44336;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+/* ✅ NEW: Hover effects for video tiles */
+.conferenceView > div:hover {
+  border-color: #00ffff; /* ✅ Lighter blue on hover */
+  box-shadow: 0 6px 30px rgba(0, 212, 255, 0.5);
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+/* ✅ NEW: Video loading state */
+.videoLoading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  color: #00d4ff;
+  font-size: 1.2rem;
+}
+
+.videoLoading::before {
+  content: '⏳';
   font-size: 3rem;
-  opacity: 0.3;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
