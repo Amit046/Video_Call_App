@@ -24,13 +24,13 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import FlipCameraIosIcon from "@mui/icons-material/FlipCameraIos"; // ✅ NEW: Back camera icon
 import server from "../environment";
 import { useLocation, useParams } from "react-router-dom";
 
 const server_url = server;
 const connections = {};
 
-// ✅ FIX 1: BETTER HD VIDEO CONSTRAINTS
 const HD_VIDEO_CONSTRAINTS = {
   width: { ideal: 1920, min: 1280 },
   height: { ideal: 1080, min: 720 },
@@ -89,6 +89,7 @@ export default function VideoMeetComponent() {
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const [connectionQuality, setConnectionQuality] = useState({});
+  const [facingMode, setFacingMode] = useState("user"); // ✅ NEW: Track camera facing mode
 
   console.log("🎬 Component Render - Room:", url, "Username:", username);
 
@@ -128,7 +129,7 @@ export default function VideoMeetComponent() {
       console.log("📷 Requesting media permissions...");
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: HD_VIDEO_CONSTRAINTS,
+        video: { ...HD_VIDEO_CONSTRAINTS, facingMode },
         audio: HD_AUDIO_CONSTRAINTS,
       });
 
@@ -188,7 +189,7 @@ export default function VideoMeetComponent() {
 
       navigator.mediaDevices
         .getUserMedia({
-          video: video ? HD_VIDEO_CONSTRAINTS : false,
+          video: video ? { ...HD_VIDEO_CONSTRAINTS, facingMode } : false,
           audio: audio ? HD_AUDIO_CONSTRAINTS : false,
         })
         .then(getUserMediaSuccess)
@@ -323,6 +324,53 @@ export default function VideoMeetComponent() {
         getUserMedia();
       };
     });
+  };
+
+  // ✅ NEW: Switch camera function
+  const handleSwitchCamera = async () => {
+    try {
+      console.log("📷 Switching camera from", facingMode);
+      const newFacingMode = facingMode === "user" ? "environment" : "user";
+      setFacingMode(newFacingMode);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { ...HD_VIDEO_CONSTRAINTS, facingMode: newFacingMode },
+        audio: false, // Don't restart audio
+      });
+
+      // Stop old video tracks
+      if (window.localStream) {
+        window.localStream.getVideoTracks().forEach((track) => track.stop());
+      }
+
+      // Replace video track
+      const videoTrack = stream.getVideoTracks()[0];
+      const audioTracks = window.localStream?.getAudioTracks() || [];
+
+      window.localStream = new MediaStream([videoTrack, ...audioTracks]);
+      localVideoref.current.srcObject = window.localStream;
+
+      // Update peer connections
+      Object.keys(connections).forEach((id) => {
+        if (id === socketIdRef.current) return;
+
+        const pc = connections[id];
+        const senders = pc.getSenders();
+        const videoSender = senders.find((s) => s.track?.kind === "video");
+
+        if (videoSender) {
+          videoSender.replaceTrack(videoTrack).catch((e) => console.error(e));
+        }
+      });
+
+      showNotification(
+        `Switched to ${newFacingMode === "user" ? "front" : "back"} camera`,
+        "success"
+      );
+    } catch (error) {
+      console.error("❌ Camera switch error:", error);
+      showNotification("Could not switch camera", "error");
+    }
   };
   const gotMessageFromServer = (fromId, message) => {
     console.log("📨 Signal from:", fromId);
@@ -570,6 +618,7 @@ export default function VideoMeetComponent() {
       setNewMessages((prevNewMessages) => prevNewMessages + 1);
     }
   }, []);
+
   const connectToSocketServer = () => {
     console.log("\n🌐 Connecting to socket server:", server_url);
     console.log("   Using HTTPS:", server_url.startsWith("https"));
@@ -900,8 +949,8 @@ export default function VideoMeetComponent() {
       }
     }
     handleMenuClose();
-  }; // ✅ MAIN FIX: Updated return JSX with proper video sizing
-  // ✅ FIXED: Complete return JSX with proper face visibility
+  };
+  // ✅ FIXED: Return JSX with mobile full screen support
   return (
     <Box
       sx={{
@@ -919,14 +968,23 @@ export default function VideoMeetComponent() {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          p: 2,
+          p: { xs: 1, sm: 2 }, // ✅ Smaller padding on mobile
           bgcolor: "#2d2d2d",
           borderBottom: "2px solid #00d4ff",
           flexShrink: 0,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Typography variant="h6" sx={{ color: "white", fontWeight: "bold" }}>
+        <Box
+          sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              color: "white",
+              fontWeight: "bold",
+              fontSize: { xs: "0.9rem", sm: "1.25rem" },
+            }}
+          >
             🎥 Room: {url}
           </Typography>
           {isHost && (
@@ -934,29 +992,37 @@ export default function VideoMeetComponent() {
               label="HOST"
               color="primary"
               size="small"
-              sx={{ bgcolor: "#00d4ff", fontWeight: "bold" }}
+              sx={{
+                bgcolor: "#00d4ff",
+                fontWeight: "bold",
+                fontSize: { xs: "0.65rem", sm: "0.8125rem" },
+              }}
             />
           )}
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography variant="body1" sx={{ color: "white" }}>
-            {username} ({videos.length} others)
+          <Typography
+            variant="body1"
+            sx={{ color: "white", fontSize: { xs: "0.75rem", sm: "1rem" } }}
+          >
+            {username} ({videos.length})
           </Typography>
           {isHost && (
             <>
-              <IconButton onClick={handleMenuOpen} sx={{ color: "white" }}>
-                <MoreVertIcon />
+              <IconButton
+                onClick={handleMenuOpen}
+                sx={{ color: "white", p: { xs: 0.5, sm: 1 } }}
+              >
+                <MoreVertIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
               </IconButton>
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                <MenuItem onClick={muteAllParticipants}>
-                  🔇 Mute All Participants
-                </MenuItem>
+                <MenuItem onClick={muteAllParticipants}>🔇 Mute All</MenuItem>
                 <MenuItem onClick={endMeetingForAll} sx={{ color: "red" }}>
-                  ❌ End Meeting for All
+                  ❌ End Meeting
                 </MenuItem>
               </Menu>
             </>
@@ -964,7 +1030,7 @@ export default function VideoMeetComponent() {
         </Box>
       </Box>
 
-      {/* ✅ FIXED: Main Video Area with CONTAIN for full face visibility */}
+      {/* ✅ FIXED: Main Video Area - Full screen on mobile */}
       <Box
         sx={{
           flex: 1,
@@ -974,47 +1040,26 @@ export default function VideoMeetComponent() {
           width: "100%",
         }}
       >
-        {/* ✅ FIXED: Center - Full Screen Video Grid with CONTAIN */}
+        {/* ✅ FIXED: Video Grid - Mobile optimized */}
         <Box
           sx={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns:
-              videos.length === 0
-                ? "1fr"
-                : videos.length === 1
-                ? "1fr"
-                : videos.length === 2
-                ? "repeat(2, 1fr)"
-                : videos.length === 3
-                ? "repeat(2, 1fr)"
-                : videos.length === 4
-                ? "repeat(2, 1fr)"
-                : "repeat(auto-fit, minmax(500px, 1fr))",
-            gridTemplateRows:
-              videos.length === 0
-                ? "1fr"
-                : videos.length <= 2
-                ? "1fr"
-                : "repeat(auto-fit, minmax(400px, 1fr))",
-            gap: 2,
-            p: 2,
-            alignContent: "center",
+            gridTemplateColumns: {
+              xs: "1fr", // ✅ Always 1 column on mobile
+              sm: videos.length <= 1 ? "1fr" : "repeat(2, 1fr)",
+              md:
+                videos.length <= 2
+                  ? "repeat(2, 1fr)"
+                  : "repeat(auto-fit, minmax(400px, 1fr))",
+            },
+            gap: { xs: 1, sm: 2 },
+            p: { xs: 1, sm: 2 },
+            alignContent: { xs: "start", sm: "center" },
             justifyContent: "center",
             height: "100%",
             width: "100%",
             overflow: "auto",
-            "&::-webkit-scrollbar": {
-              width: "8px",
-              height: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              bgcolor: "#1a1a1a",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              bgcolor: "#00d4ff",
-              borderRadius: "4px",
-            },
           }}
         >
           {videos.map((video) => (
@@ -1023,22 +1068,25 @@ export default function VideoMeetComponent() {
               sx={{
                 position: "relative",
                 bgcolor: "#000",
-                borderRadius: 2,
+                borderRadius: { xs: 1, sm: 2 },
                 overflow: "hidden",
                 aspectRatio: "16/9",
                 width: "100%",
                 height: "100%",
                 minHeight: {
-                  xs: "250px",
-                  sm: "400px",
-                  md: "500px",
+                  xs: "calc(100vh - 150px)", // ✅ Full height on mobile
+                  sm: "350px",
+                  md: "450px",
                 },
-                maxHeight: "calc(100vh - 180px)",
+                maxHeight: {
+                  xs: "calc(100vh - 150px)", // ✅ Full height on mobile
+                  sm: "calc(100vh - 180px)",
+                },
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 boxShadow: "0 4px 20px rgba(0, 212, 255, 0.3)",
-                border: "2px solid #00d4ff",
+                border: { xs: "1px solid #00d4ff", sm: "2px solid #00d4ff" },
               }}
             >
               <video
@@ -1053,35 +1101,41 @@ export default function VideoMeetComponent() {
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "contain", // ✅ CHANGED from "cover" to "contain" for full face visibility
+                  objectFit: "contain",
                   background: "#000",
                 }}
               />
+              {/* ✅ FIXED: Username label - Always visible */}
               <Box
                 sx={{
                   position: "absolute",
-                  bottom: 10,
-                  left: 10,
-                  bgcolor: "rgba(0,0,0,0.8)",
-                  px: 2,
-                  py: 0.5,
+                  bottom: { xs: 8, sm: 10 },
+                  left: { xs: 8, sm: 10 },
+                  bgcolor: "rgba(0,0,0,0.85)",
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.5, sm: 0.5 },
                   borderRadius: 1,
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
                   backdropFilter: "blur(10px)",
+                  zIndex: 2, // ✅ Ensure label is visible
                 }}
               >
                 <Box
                   sx={{
-                    width: 8,
-                    height: 8,
+                    width: { xs: 6, sm: 8 },
+                    height: { xs: 6, sm: 8 },
                     borderRadius: "50%",
                     bgcolor: "#4CAF50",
                   }}
                 />
                 <Typography
-                  sx={{ color: "white", fontSize: "0.9rem", fontWeight: 600 }}
+                  sx={{
+                    color: "white",
+                    fontSize: { xs: "0.75rem", sm: "0.9rem" },
+                    fontWeight: 600,
+                  }}
                 >
                   {video.username || "User"}
                 </Typography>
@@ -1092,43 +1146,42 @@ export default function VideoMeetComponent() {
             <Box
               sx={{
                 gridColumn: "1 / -1",
-                gridRow: "1 / -1",
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
                 color: "white",
                 gap: 2,
-                minHeight: "400px",
+                minHeight: { xs: "60vh", sm: "400px" },
               }}
             >
-              <Typography fontSize="1.5rem">
-                Waiting for others to join...
+              <Typography fontSize={{ xs: "1.2rem", sm: "1.5rem" }}>
+                Waiting for others...
               </Typography>
-              <Typography fontSize="1rem" sx={{ color: "#999" }}>
-                Share Room ID:{" "}
-                <strong style={{ color: "#00d4ff" }}>{url}</strong>
+              <Typography
+                fontSize={{ xs: "0.85rem", sm: "1rem" }}
+                sx={{ color: "#999", textAlign: "center", px: 2 }}
+              >
+                Room: <strong style={{ color: "#00d4ff" }}>{url}</strong>
               </Typography>
             </Box>
           )}
         </Box>
 
-        {/* ✅ FIXED: Local Video - Better sizing with CONTAIN for mobile */}
+        {/* ✅ FIXED: Local Video - Better mobile size */}
         <Box
           sx={{
             position: "absolute",
-            bottom: { xs: 80, sm: 90 },
-            right: { xs: 15, sm: 20 },
-            width: { xs: "140px", sm: "220px", md: "280px" }, // ✅ REDUCED for mobile
-            aspectRatio: "4/3", // ✅ CHANGED back to 4/3 for better mobile view
-            borderRadius: 2,
+            bottom: { xs: 70, sm: 90 },
+            right: { xs: 10, sm: 20 },
+            width: { xs: "100px", sm: "180px", md: "220px" }, // ✅ Smaller on mobile
+            aspectRatio: "4/3",
+            borderRadius: { xs: 1, sm: 2 },
             overflow: "hidden",
-            boxShadow: "0 6px 30px rgba(0, 212, 255, 0.5)",
-            border: "3px solid #00d4ff",
+            boxShadow: "0 4px 15px rgba(0, 212, 255, 0.5)",
+            border: { xs: "2px solid #00d4ff", sm: "3px solid #00d4ff" },
             bgcolor: "#000",
             zIndex: 10,
-            cursor: "grab",
-            "&:active": { cursor: "grabbing" },
           }}
         >
           <video
@@ -1139,18 +1192,19 @@ export default function VideoMeetComponent() {
             style={{
               width: "100%",
               height: "100%",
-              objectFit: "contain", // ✅ CHANGED from "cover" to "contain"
-              transform: "scaleX(-1)",
+              objectFit: "cover",
+              transform: facingMode === "user" ? "scaleX(-1)" : "none", // ✅ Mirror only front camera
               background: "#000",
             }}
           />
+          {/* ✅ Username label for local video */}
           <Box
             sx={{
               position: "absolute",
-              bottom: 6,
-              left: 6,
+              bottom: 4,
+              left: 4,
               bgcolor: "rgba(0,0,0,0.9)",
-              px: 1.5,
+              px: { xs: 1, sm: 1.5 },
               py: 0.5,
               borderRadius: 1,
               backdropFilter: "blur(10px)",
@@ -1159,7 +1213,7 @@ export default function VideoMeetComponent() {
             <Typography
               sx={{
                 color: "white",
-                fontSize: { xs: "0.65rem", sm: "0.8rem" },
+                fontSize: { xs: "0.6rem", sm: "0.75rem" },
                 fontWeight: 600,
               }}
             >
@@ -1173,11 +1227,11 @@ export default function VideoMeetComponent() {
           <Paper
             sx={{
               position: "absolute",
-              right: 20,
-              top: 20,
-              width: { xs: "90%", sm: 400 },
-              height: "75%",
-              maxHeight: "calc(100vh - 180px)",
+              right: { xs: 10, sm: 20 },
+              top: { xs: 10, sm: 20 },
+              width: { xs: "calc(100% - 20px)", sm: 380 },
+              height: { xs: "calc(100% - 20px)", sm: "75%" },
+              maxHeight: { xs: "calc(100% - 20px)", sm: "calc(100vh - 180px)" },
               display: "flex",
               flexDirection: "column",
               zIndex: 20,
@@ -1187,7 +1241,7 @@ export default function VideoMeetComponent() {
           >
             <Box
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderBottom: "2px solid #00d4ff",
                 display: "flex",
                 justifyContent: "space-between",
@@ -1197,7 +1251,11 @@ export default function VideoMeetComponent() {
             >
               <Typography
                 variant="h6"
-                sx={{ color: "white", fontWeight: "bold" }}
+                sx={{
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
+                }}
               >
                 Chat
               </Typography>
@@ -1214,7 +1272,7 @@ export default function VideoMeetComponent() {
               sx={{
                 flex: 1,
                 overflowY: "auto",
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 display: "flex",
                 flexDirection: "column",
                 gap: 1,
@@ -1229,7 +1287,14 @@ export default function VideoMeetComponent() {
               }}
             >
               {messages.length === 0 ? (
-                <Typography sx={{ color: "#999", textAlign: "center", mt: 4 }}>
+                <Typography
+                  sx={{
+                    color: "#999",
+                    textAlign: "center",
+                    mt: 4,
+                    fontSize: { xs: "0.85rem", sm: "1rem" },
+                  }}
+                >
                   No messages yet
                 </Typography>
               ) : (
@@ -1247,7 +1312,7 @@ export default function VideoMeetComponent() {
                     <Paper
                       elevation={2}
                       sx={{
-                        p: 1.5,
+                        p: { xs: 1, sm: 1.5 },
                         bgcolor:
                           item.socketId === socketIdRef.current
                             ? "#00d4ff"
@@ -1260,11 +1325,20 @@ export default function VideoMeetComponent() {
                     >
                       <Typography
                         variant="caption"
-                        sx={{ fontWeight: "bold", display: "block" }}
+                        sx={{
+                          fontWeight: "bold",
+                          display: "block",
+                          fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                        }}
                       >
                         {item.sender}
                       </Typography>
-                      <Typography variant="body2">{item.data}</Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
+                      >
+                        {item.data}
+                      </Typography>
                     </Paper>
                   </Box>
                 ))
@@ -1273,7 +1347,7 @@ export default function VideoMeetComponent() {
 
             <Box
               sx={{
-                p: 2,
+                p: { xs: 1.5, sm: 2 },
                 borderTop: "2px solid #00d4ff",
                 display: "flex",
                 gap: 1,
@@ -1286,11 +1360,12 @@ export default function VideoMeetComponent() {
                 value={message}
                 onChange={handleMessageChange}
                 onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
+                placeholder="Message..."
                 autoComplete="off"
                 sx={{
                   "& .MuiOutlinedInput-root": {
                     bgcolor: "white",
+                    fontSize: { xs: "0.85rem", sm: "1rem" },
                     "& fieldset": {
                       borderColor: "#00d4ff",
                     },
@@ -1307,7 +1382,8 @@ export default function VideoMeetComponent() {
                 sx={{
                   bgcolor: "#00d4ff",
                   "&:hover": { bgcolor: "#0099cc" },
-                  minWidth: "80px",
+                  minWidth: { xs: "60px", sm: "80px" },
+                  fontSize: { xs: "0.8rem", sm: "0.875rem" },
                 }}
               >
                 Send
@@ -1317,40 +1393,39 @@ export default function VideoMeetComponent() {
         )}
       </Box>
 
-      {/* Bottom Controls */}
+      {/* ✅ FIXED: Bottom Controls - Mobile optimized with flip camera */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          gap: { xs: 1.5, sm: 2 },
-          p: { xs: 2, sm: 2.5 },
+          gap: { xs: 1, sm: 2 },
+          p: { xs: 1.5, sm: 2 },
           bgcolor: "#2d2d2d",
-          flexWrap: "wrap",
+          flexWrap: "nowrap",
           flexShrink: 0,
           borderTop: "2px solid #00d4ff",
+          overflowX: "auto",
         }}
       >
         <IconButton
           onClick={handleVideo}
           sx={{
             bgcolor: video ? "rgba(255,255,255,0.1)" : "rgba(244,67,54,0.9)",
-            width: { xs: 50, sm: 60 },
-            height: { xs: 50, sm: 60 },
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": {
               bgcolor: video ? "rgba(255,255,255,0.2)" : "rgba(244,67,54,1)",
-              transform: "scale(1.05)",
             },
-            transition: "all 0.2s ease",
           }}
         >
           {video ? (
             <VideocamIcon
-              sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }}
+              sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }}
             />
           ) : (
             <VideocamOffIcon
-              sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }}
+              sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }}
             />
           )}
         </IconButton>
@@ -1359,20 +1434,36 @@ export default function VideoMeetComponent() {
           onClick={handleAudio}
           sx={{
             bgcolor: audio ? "rgba(255,255,255,0.1)" : "rgba(244,67,54,0.9)",
-            width: { xs: 50, sm: 60 },
-            height: { xs: 50, sm: 60 },
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": {
               bgcolor: audio ? "rgba(255,255,255,0.2)" : "rgba(244,67,54,1)",
-              transform: "scale(1.05)",
             },
-            transition: "all 0.2s ease",
           }}
         >
           {audio ? (
-            <MicIcon sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+            <MicIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           ) : (
-            <MicOffIcon sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+            <MicOffIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           )}
+        </IconButton>
+
+        {/* ✅ NEW: Flip Camera Button (Mobile Only) */}
+        <IconButton
+          onClick={handleSwitchCamera}
+          sx={{
+            bgcolor: "rgba(255,255,255,0.1)",
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
+            display: { xs: "flex", md: "none" }, // Show only on mobile
+            "&:hover": {
+              bgcolor: "rgba(255,255,255,0.2)",
+            },
+          }}
+        >
+          <FlipCameraIosIcon
+            sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }}
+          />
         </IconButton>
 
         {screenAvailable && (
@@ -1380,20 +1471,18 @@ export default function VideoMeetComponent() {
             onClick={handleScreen}
             sx={{
               bgcolor: screen ? "#00d4ff" : "rgba(255,255,255,0.1)",
-              width: { xs: 50, sm: 60 },
-              height: { xs: 50, sm: 60 },
+              width: { xs: 45, sm: 56 },
+              height: { xs: 45, sm: 56 },
               display: { xs: "none", sm: "flex" },
               "&:hover": {
                 bgcolor: screen ? "#0099cc" : "rgba(255,255,255,0.2)",
-                transform: "scale(1.05)",
               },
-              transition: "all 0.2s ease",
             }}
           >
             {screen ? (
-              <StopScreenShareIcon sx={{ color: "white", fontSize: 26 }} />
+              <StopScreenShareIcon sx={{ color: "white", fontSize: 24 }} />
             ) : (
-              <ScreenShareIcon sx={{ color: "white", fontSize: 26 }} />
+              <ScreenShareIcon sx={{ color: "white", fontSize: 24 }} />
             )}
           </IconButton>
         )}
@@ -1402,16 +1491,14 @@ export default function VideoMeetComponent() {
           onClick={handleEndCall}
           sx={{
             bgcolor: "rgba(244,67,54,0.9)",
-            width: { xs: 50, sm: 60 },
-            height: { xs: 50, sm: 60 },
+            width: { xs: 45, sm: 56 },
+            height: { xs: 45, sm: 56 },
             "&:hover": {
               bgcolor: "rgba(244,67,54,1)",
-              transform: "scale(1.05)",
             },
-            transition: "all 0.2s ease",
           }}
         >
-          <CallEndIcon sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+          <CallEndIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
         </IconButton>
 
         <Badge badgeContent={newMessages} color="error">
@@ -1422,16 +1509,14 @@ export default function VideoMeetComponent() {
             }}
             sx={{
               bgcolor: showModal ? "#00d4ff" : "rgba(255,255,255,0.1)",
-              width: { xs: 50, sm: 60 },
-              height: { xs: 50, sm: 60 },
+              width: { xs: 45, sm: 56 },
+              height: { xs: 45, sm: 56 },
               "&:hover": {
                 bgcolor: showModal ? "#0099cc" : "rgba(255,255,255,0.2)",
-                transform: "scale(1.05)",
               },
-              transition: "all 0.2s ease",
             }}
           >
-            <ChatIcon sx={{ color: "white", fontSize: { xs: 22, sm: 26 } }} />
+            <ChatIcon sx={{ color: "white", fontSize: { xs: 20, sm: 24 } }} />
           </IconButton>
         </Badge>
       </Box>
@@ -1450,23 +1535,3 @@ export default function VideoMeetComponent() {
     </Box>
   );
 }
-
-// Helper functions remain same
-const silence = () => {
-  let ctx = new AudioContext();
-  let oscillator = ctx.createOscillator();
-  let dst = oscillator.connect(ctx.createMediaStreamDestination());
-  oscillator.start();
-  ctx.resume();
-  return Object.assign(dst.stream.getAudioTracks()[0], { enabled: false });
-};
-
-const black = ({ width = 640, height = 480 } = {}) => {
-  let canvas = Object.assign(document.createElement("canvas"), {
-    width,
-    height,
-  });
-  canvas.getContext("2d").fillRect(0, 0, width, height);
-  let stream = canvas.captureStream();
-  return Object.assign(stream.getVideoTracks()[0], { enabled: false });
-};
