@@ -107,12 +107,12 @@ export default function LandingPage() {
         }}
       />
 
-      {/* Navbar - Fixed Height */}
+      {/* Navbar */}
       <Box
         sx={{
           position: "relative",
           zIndex: 100,
-          height: { xs: "60px", sm: "70px", md: "80px" },
+          height: { xs: "50px", sm: "60px", md: "70px" },
           padding: { xs: "0 1rem", sm: "0 1.5rem", md: "0 2.5rem" },
           backdropFilter: "blur(20px)",
           background: "rgba(20, 20, 36, 0.85)",
@@ -200,7 +200,7 @@ export default function LandingPage() {
         </Box>
       </Box>
 
-      {/* Main Content - Fixed Layout */}
+      {/* Main Content */}
       <Box
         sx={{
           flex: 1,
@@ -222,7 +222,7 @@ export default function LandingPage() {
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: { xs: "0.8rem", sm: "1rem", md: "1.3rem" },
+            gap: { xs: "0.6rem", sm: "0.8rem", md: "1rem" },
             justifyContent: "center",
             position: "relative",
             zIndex: 20,
@@ -237,9 +237,9 @@ export default function LandingPage() {
               alignItems: "center",
               gap: "0.4rem",
               padding: {
-                xs: "0.4rem 0.9rem",
-                sm: "0.5rem 1rem",
-                md: "0.6rem 1.2rem",
+                xs: "0.3rem 0.8rem",
+                sm: "0.4rem 0.9rem",
+                md: "0.5rem 1rem",
               },
               background: "rgba(255, 107, 107, 0.15)",
               border: "1px solid rgba(255, 107, 107, 0.4)",
@@ -252,10 +252,10 @@ export default function LandingPage() {
               alignSelf: { xs: "center", lg: "flex-start" },
             }}
           >
-            <AutoAwesomeIcon sx={{ fontSize: { xs: "0.85rem", md: "1rem" } }} />
+            <AutoAwesomeIcon sx={{ fontSize: { xs: "0.75rem", md: "0.9rem" } }} />
             <Typography
               variant="caption"
-              sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.85rem" } }}
+              sx={{ fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.8rem" } }}
             >
               No Login Required
             </Typography>
@@ -266,15 +266,15 @@ export default function LandingPage() {
             <Typography
               sx={{
                 fontSize: {
-                  xs: "1.6rem",
-                  sm: "2rem",
-                  md: "2.5rem",
-                  lg: "3rem",
+                  xs: "1.4rem",
+                  sm: "1.8rem",
+                  md: "2.2rem",
+                  lg: "2.6rem",
                 },
                 fontWeight: 900,
                 lineHeight: 1.1,
                 color: "#ffffff",
-                marginBottom: { xs: "0.4rem", md: "0.6rem" },
+                marginBottom: { xs: "0.3rem", md: "0.5rem" },
                 letterSpacing: "-1px",
                 textShadow: "0 2px 20px rgba(255, 107, 107, 0.2)",
               }}
@@ -297,7 +297,7 @@ export default function LandingPage() {
             </Typography>
             <Typography
               sx={{
-                fontSize: { xs: "0.8rem", sm: "0.9rem", md: "1rem" },
+                fontSize: { xs: "0.75rem", sm: "0.85rem", md: "0.95rem" },
                 color: "#d4d4e0",
                 lineHeight: 1.5,
                 fontWeight: 400,
@@ -314,7 +314,7 @@ export default function LandingPage() {
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: { xs: "0.8rem", md: "1rem" },
+              gap: { xs: "0.6rem", md: "0.8rem" },
             }}
           >
             <TextField
@@ -334,7 +334,7 @@ export default function LandingPage() {
                     <PersonIcon
                       sx={{
                         color: "#ff6b6b",
-                        fontSize: { xs: "1.1rem", md: "1.3rem" },
+                        fontSize: { xs: "1rem", md: "1.2rem" },
                       }}
                     />
                   </InputAdornment>
@@ -362,20 +362,20 @@ export default function LandingPage() {
                 },
                 "& .MuiInputLabel-root": {
                   color: "#d4d4e0",
-                  fontSize: { xs: "0.85rem", md: "0.95rem" },
+                  fontSize: { xs: "0.8rem", md: "0.9rem" },
                   "&.Mui-focused": {
                     color: "#ff6b6b",
                   },
                 },
                 "& .MuiInputBase-input": {
                   color: "#ffffff",
-                  fontSize: { xs: "0.85rem", md: "0.95rem" },
-                  padding: { xs: "10px 10px 10px 0", md: "12px 12px 12px 0" },
+                  fontSize: { xs: "0.8rem", md: "0.9rem" },
+                  padding: { xs: "9px 10px 9px 0", md: "11px 12px 11px 0" },
                 },
               }}
             />
 
-            <Box sx={{ display: "flex", gap: { xs: "0.6rem", md: "0.8rem" } }}>
+            <Box sx={{ display: "flex", gap: { xs: "0.5rem", md: "0.7rem" } }}>
               <TextField
                 fullWidth
                 variant="outlined"
@@ -393,7 +393,7 @@ export default function LandingPage() {
                       <MeetingRoomIcon
                         sx={{
                           color: "#ff6b6b",
-                          fontSize: { xs: "1.1rem", md: "1.3rem" },
+                          fontSize: { xs: "1rem", md: "1.2rem" },
                         }}
                       />
                     </InputAdornment>
@@ -421,15 +421,15 @@ export default function LandingPage() {
                   },
                   "& .MuiInputLabel-root": {
                     color: "#d4d4e0",
-                    fontSize: { xs: "0.85rem", md: "0.95rem" },
+                    fontSize: { xs: "0.8rem", md: "0.9rem" },
                     "&.Mui-focused": {
                       color: "#ff6b6b",
                     },
                   },
                   "& .MuiInputBase-input": {
                     color: "#ffffff",
-                    fontSize: { xs: "0.85rem", md: "0.95rem" },
-                    padding: { xs: "10px 10px 10px 0", md: "12px 12px 12px 0" },
+                    fontSize: { xs: "0.8rem", md: "0.9rem" },
+                    padding: { xs: "9px 10px 9px 0", md: "11px 12px 11px 0" },
                     fontWeight: 600,
                     letterSpacing: "1px",
                   },
@@ -441,15 +441,15 @@ export default function LandingPage() {
                 sx={{
                   borderColor: "rgba(255, 107, 107, 0.6)",
                   color: "#ff6b6b",
-                  minWidth: { xs: "90px", md: "110px" },
+                  minWidth: { xs: "85px", md: "100px" },
                   fontWeight: 700,
                   textTransform: "none",
-                  fontSize: { xs: "0.8rem", md: "0.9rem" },
+                  fontSize: { xs: "0.75rem", md: "0.85rem" },
                   background: "rgba(255, 107, 107, 0.08)",
                   backdropFilter: "blur(10px)",
                   borderWidth: "1.5px",
                   borderRadius: "12px",
-                  padding: { xs: "6px 10px", md: "8px 14px" },
+                  padding: { xs: "5px 8px", md: "7px 12px" },
                   "&:hover": {
                     background: "rgba(255, 107, 107, 0.2)",
                     borderColor: "#ff6b6b",
@@ -459,7 +459,7 @@ export default function LandingPage() {
                 }}
               >
                 <AutoAwesomeIcon
-                  sx={{ mr: 0.4, fontSize: { xs: "0.9rem", md: "1rem" } }}
+                  sx={{ mr: 0.3, fontSize: { xs: "0.85rem", md: "0.95rem" } }}
                 />
                 Generate
               </Button>
@@ -470,14 +470,14 @@ export default function LandingPage() {
                 variant="body2"
                 sx={{
                   color: "#ff8a8a",
-                  padding: { xs: "0.6rem", md: "0.7rem" },
+                  padding: { xs: "0.5rem", md: "0.6rem" },
                   background: "rgba(255, 107, 107, 0.12)",
                   backdropFilter: "blur(10px)",
                   borderRadius: "10px",
                   border: "1.5px solid rgba(255, 107, 107, 0.4)",
                   textAlign: "center",
                   fontWeight: 600,
-                  fontSize: { xs: "0.8rem", md: "0.85rem" },
+                  fontSize: { xs: "0.75rem", md: "0.8rem" },
                   animation: "shake 0.4s ease",
                 }}
               >
@@ -494,8 +494,8 @@ export default function LandingPage() {
                 background:
                   "linear-gradient(135deg, #ff6b6b 0%, #ff8585 50%, #ff9a9e 100%)",
                 color: "white",
-                padding: { xs: "0.7rem", md: "0.85rem" },
-                fontSize: { xs: "0.95rem", md: "1.05rem" },
+                padding: { xs: "0.6rem", md: "0.75rem" },
+                fontSize: { xs: "0.9rem", md: "1rem" },
                 fontWeight: 800,
                 textTransform: "none",
                 borderRadius: "12px",
@@ -510,7 +510,7 @@ export default function LandingPage() {
               }}
             >
               <VideocamIcon
-                sx={{ mr: 0.6, fontSize: { xs: "1.1rem", md: "1.3rem" } }}
+                sx={{ mr: 0.5, fontSize: { xs: "1rem", md: "1.2rem" } }}
               />
               Join Meeting
             </Button>
@@ -520,13 +520,13 @@ export default function LandingPage() {
               sx={{
                 color: "#d4d4e0",
                 textAlign: "center",
-                padding: { xs: "0.5rem", md: "0.6rem" },
+                padding: { xs: "0.4rem", md: "0.5rem" },
                 background: "rgba(255, 195, 113, 0.08)",
                 backdropFilter: "blur(10px)",
                 border: "1px solid rgba(255, 195, 113, 0.25)",
                 borderRadius: "10px",
                 fontWeight: 600,
-                fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
+                fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.75rem" },
               }}
             >
               💡 Share the Room ID with others to invite them
@@ -576,6 +576,66 @@ export default function LandingPage() {
                 filter: "drop-shadow(0 15px 40px rgba(255, 107, 107, 0.3))",
               }}
             />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Footer */}
+      <Box
+        sx={{
+          position: "relative",
+          zIndex: 100,
+          padding: { xs: "0.6rem 1rem", sm: "0.7rem 1.5rem", md: "0.8rem 2.5rem" },
+          backdropFilter: "blur(20px)",
+          background: "rgba(20, 20, 36, 0.85)",
+          borderTop: "1px solid rgba(255, 107, 107, 0.25)",
+          boxShadow: "0 -4px 30px rgba(0, 0, 0, 0.3)",
+          flexShrink: 0,
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: "1400px",
+            margin: "0 auto",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: { xs: "0.4rem", sm: "0.8rem" },
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
+              color: "#d4d4e0",
+              fontWeight: 500,
+              textAlign: { xs: "center", sm: "left" },
+            }}
+          >
+            © 2025 Amit. All Rights Reserved.
+          </Typography>
+          
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.4rem",
+            }}
+          >
+            <Typography
+              sx={{
+                fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.75rem" },
+                color: "#9d9cdb",
+                fontWeight: 600,
+                padding: "0.25rem 0.7rem",
+                background: "rgba(120, 119, 198, 0.15)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(120, 119, 198, 0.3)",
+                borderRadius: "20px",
+              }}
+            >
+              Made with ❤️ in India
+            </Typography>
           </Box>
         </Box>
       </Box>
