@@ -24,7 +24,7 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import FlipCameraIosIcon from "@mui/icons-material/FlipCameraIos"; // ✅ NEW: Back camera icon
+import FlipCameraIosIcon from "@mui/icons-material/FlipCameraIos"; 
 import server from "../environment";
 import { useLocation, useParams } from "react-router-dom";
 
