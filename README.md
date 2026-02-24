@@ -71,13 +71,6 @@ npm install
 npm start
 ```
 
-### 🔗 Access the app at:
-```
-Frontend: http://localhost:3000
-Backend:  http://localhost:5000 (or your set port)
-```
-
----
 
 ## 🤝 Contributing
 
