@@ -9,6 +9,9 @@ A full-stack real-time **video conferencing web application** built using **Reac
 - ⚡ Socket.IO-based signaling
 - 📱 Responsive design for mobile & desktop
 
+  <img width="1913" height="865" alt="image" src="https://github.com/user-attachments/assets/d2c56609-0258-4c14-896c-6d2400bc4d07" />
+
+
 ## 🛠 Tech Stack
 
 **Frontend:** React.js, CSS, HTML, WebRTC  
