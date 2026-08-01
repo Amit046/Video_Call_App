@@ -141,7 +141,8 @@ export default function LandingPage() {
               letterSpacing: "-0.5px",
             }}
           >
-            Apna
+            CallBridge
+            
             <span
               style={{
                 background: "linear-gradient(135deg, #ff6b6b 0%, #ff9a9e 100%)",
@@ -149,9 +150,7 @@ export default function LandingPage() {
                 WebkitTextFillColor: "transparent",
                 backgroundClip: "text",
               }}
-            >
-              Video
-            </span>
+            ></span>
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: "0.4rem" }}>
@@ -252,7 +251,9 @@ export default function LandingPage() {
               alignSelf: { xs: "center", lg: "flex-start" },
             }}
           >
-            <AutoAwesomeIcon sx={{ fontSize: { xs: "0.75rem", md: "0.9rem" } }} />
+            <AutoAwesomeIcon
+              sx={{ fontSize: { xs: "0.75rem", md: "0.9rem" } }}
+            />
             <Typography
               variant="caption"
               sx={{ fontSize: { xs: "0.65rem", sm: "0.7rem", md: "0.8rem" } }}
@@ -585,7 +586,11 @@ export default function LandingPage() {
         sx={{
           position: "relative",
           zIndex: 100,
-          padding: { xs: "0.6rem 1rem", sm: "0.7rem 1.5rem", md: "0.8rem 2.5rem" },
+          padding: {
+            xs: "0.6rem 1rem",
+            sm: "0.7rem 1.5rem",
+            md: "0.8rem 2.5rem",
+          },
           backdropFilter: "blur(20px)",
           background: "rgba(20, 20, 36, 0.85)",
           borderTop: "1px solid rgba(255, 107, 107, 0.25)",
@@ -614,7 +619,7 @@ export default function LandingPage() {
           >
             © 2025 Amit. All Rights Reserved.
           </Typography>
-          
+
           <Box
             sx={{
               display: "flex",
