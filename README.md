@@ -1,4 +1,4 @@
-# 🌉 CallBridge – Real-Time Video Calling Platform
+# CallBridge – Real-Time Video Calling Platform
 
 A full-stack real-time video calling platform built using **React.js**, **Node.js**, **WebRTC**, and **Socket.IO**. CallBridge enables secure, low-latency one-to-one video communication with authentication, meeting history, and a modern responsive interface.
 ## live link : https://ideo-call-app-3.onrender.com/
