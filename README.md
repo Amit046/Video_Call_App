@@ -1,6 +1,6 @@
-# 🎥 Video Call App
+# 🌉 CallBridge – Real-Time Video Calling Platform
 
-A full-stack real-time **video conferencing web application** built using **React.js**, **Node.js**, **WebRTC**, and **Socket.IO**. It supports live video meetings with authentication, meeting history, and a modern UI.
+A full-stack real-time video calling platform built using **React.js**, **Node.js**, **WebRTC**, and **Socket.IO**. CallBridge enables secure, low-latency one-to-one video communication with authentication, meeting history, and a modern responsive interface.
 ## live link : https://ideo-call-app-3.onrender.com/
 ## 🚀 Features
 
@@ -9,7 +9,8 @@ A full-stack real-time **video conferencing web application** built using **Reac
 - ⚡ Socket.IO-based signaling
 - 📱 Responsive design for mobile & desktop
 
-  <img width="1913" height="865" alt="image" src="https://github.com/user-attachments/assets/d2c56609-0258-4c14-896c-6d2400bc4d07" />
+<img width="1918" height="872" alt="image" src="https://github.com/user-attachments/assets/9e07c881-17f7-466c-ac76-ab1bf1def019" />
+
 
 
 ## 🛠 Tech Stack
