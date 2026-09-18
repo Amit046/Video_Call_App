@@ -23,7 +23,7 @@ A full-stack real-time video calling platform built using **React.js**, **Node.j
 ## 📁 Folder Structure
 
 ```
-Zoom-main/
+CallBridge/
 ├── backend/
 │   ├── src/
 │   │   ├── controllers/
